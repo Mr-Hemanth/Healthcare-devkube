@@ -1,12 +1,8 @@
-// ...existing code...
-
-// Alias route for /api/records to support frontend compatibility
-// (Place this after app and models are defined)
-
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
+require('dotenv').config(); // Add this at the top after your requires
 
 const app = express();
 const PORT = 5001; // Port specified directly
@@ -20,8 +16,8 @@ app.get('/', (req, res) => {
   res.send('Backend server is running!');
 });
 
-// MongoDB connection
-mongoose.connect('mongodb://localhost:27017/health', {
+// MongoDB connection (direct Atlas URI, no .env file)
+mongoose.connect('mongodb+srv://devops:devops@devops.o4ykiod.mongodb.net/?retryWrites=true&w=majority&appName=devops', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
