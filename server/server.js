@@ -67,19 +67,41 @@ app.post('/api/signup', async (req, res) => {
   }
 
   try {
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
+    // Check for existing email
+    const existingEmailUser = await User.findOne({ email });
+    if (existingEmailUser) {
       return res.status(400).json({ message: 'Email already in use' });
+    }
+
+    // Check for existing username
+    const existingUsernameUser = await User.findOne({ username });
+    if (existingUsernameUser) {
+      return res.status(400).json({ message: 'Username already taken' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({ username, email, password: hashedPassword });
 
     await user.save();
-    res.status(201).send('User registered successfully!');
+    res.status(201).json({ message: 'User registered successfully!' });
   } catch (error) {
     console.error('Error during signup:', error);
-    res.status(500).json({ message: 'Error registering user', error });
+    
+    // Handle MongoDB duplicate key errors
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      const value = error.keyValue[field];
+      
+      if (field === 'username') {
+        return res.status(400).json({ message: 'Username already taken' });
+      } else if (field === 'email') {
+        return res.status(400).json({ message: 'Email already in use' });
+      } else {
+        return res.status(400).json({ message: `${field} already exists` });
+      }
+    }
+    
+    res.status(500).json({ message: 'Error registering user. Please try again.' });
   }
 });
 

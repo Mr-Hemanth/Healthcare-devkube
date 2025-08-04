@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Welcome from './components/Welcome';
 import Home from './components/Home';
@@ -13,28 +14,27 @@ import AdminPage from './components/AdminPage';
 import Footer from './components/Footer'; 
 import ProtectedRoute from './components/ProtectedRoute';
 
-
-
-
 function App() {
   return (
-    <Router>
-    <div>
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Welcome />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-        <Route path="/appointment-scheduling" element={<ProtectedRoute><AppointmentScheduling /></ProtectedRoute>} />
-        <Route path="/medical-record" element={<ProtectedRoute><MedicalRecord /></ProtectedRoute>} />
-        <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
-        <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
-        <Route path="/about" element={<About />} />
-      </Routes>
-      <Footer />
-    </div>
-  </Router>
+    <AuthProvider>
+      <Router>
+        <div>
+          <Navbar />
+          <Routes>
+            <Route path="/" element={<Welcome />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/home" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+            <Route path="/appointment-scheduling" element={<ProtectedRoute><AppointmentScheduling /></ProtectedRoute>} />
+            <Route path="/medical-record" element={<ProtectedRoute><MedicalRecord /></ProtectedRoute>} />
+            <Route path="/billing" element={<ProtectedRoute><Billing /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+          </Routes>
+          <Footer />
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 
