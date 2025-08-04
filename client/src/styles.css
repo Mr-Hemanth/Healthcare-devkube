@@ -11,12 +11,14 @@ html {
 }
 
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f4f4f4;
-    color: #333;
+    font-family: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    background-color: #f8fafc;
+    color: #1f2937;
     margin: 0;
     padding: 0;
     line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   
   .container {
@@ -105,6 +107,142 @@ body {
     
     p {
       font-size: 0.9rem;
+    }
+  }
+
+  /* Professional Service Pages Responsive Design */
+  @media (max-width: 1024px) {
+    .service-content-section {
+      grid-template-columns: 1fr !important;
+      gap: 48px !important;
+    }
+    
+    .service-form-container {
+      padding: 32px !important;
+    }
+    
+    .service-input-row {
+      grid-template-columns: 1fr !important;
+      gap: 16px !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .service-header-section {
+      padding: 60px 16px 40px !important;
+    }
+    
+    .service-main-title {
+      font-size: 2.5rem !important;
+    }
+    
+    .service-subtitle {
+      font-size: 1.1rem !important;
+    }
+    
+    .service-content-section {
+      padding: 60px 16px !important;
+    }
+    
+    .service-form-container {
+      padding: 24px !important;
+    }
+    
+    .service-icon-container {
+      font-size: 48px !important;
+      padding: 16px !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .service-main-title {
+      font-size: 2rem !important;
+    }
+    
+    .service-form-title {
+      font-size: 1.5rem !important;
+    }
+    
+    .service-input-style,
+    .service-select-style,
+    .service-textarea-style {
+      padding: 12px !important;
+      font-size: 14px !important;
+    }
+    
+    .service-button-style {
+      padding: 14px 24px !important;
+      font-size: 1rem !important;
+    }
+  }
+
+  /* Focus states for accessibility */
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1) !important;
+    outline: none !important;
+  }
+
+  /* Hover effects for interactive elements */
+  .service-card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  .service-button:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3) !important;
+  }
+
+  /* Loading animations */
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+
+  .loading {
+    animation: pulse 1.5s infinite;
+  }
+
+  /* Custom scrollbar for modern look */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+
+  /* Print styles for medical records */
+  @media print {
+    .service-header-section,
+    .service-info-card {
+      display: none !important;
+    }
+    
+    .service-form-container {
+      box-shadow: none !important;
+      border: 1px solid #000 !important;
+    }
+    
+    body {
+      background: white !important;
+      color: black !important;
     }
   }
 

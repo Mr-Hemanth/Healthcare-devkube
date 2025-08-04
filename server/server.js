@@ -1,3 +1,8 @@
+// ...existing code...
+
+// Alias route for /api/records to support frontend compatibility
+// (Place this after app and models are defined)
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -31,22 +36,40 @@ const userSchema = new mongoose.Schema({
 });
 
 
+
+// Appointment schema updated for frontend fields
 const appointmentSchema = new mongoose.Schema({
-  patientName: String,
-  date: Date,
-  time: String,
-  doctor: String,
-});
-const medicalRecordSchema = new mongoose.Schema({
-  patientName: String,
-  condition: String,
-  treatment: String,
+  patientName: { type: String, required: true },
+  patientId: { type: String },
+  date: { type: Date, required: true },
+  time: { type: String },
+  doctor: { type: String },
+  reason: { type: String },
+  status: { type: String, default: 'Scheduled' },
+  notes: { type: String },
 });
 
+// Medical record schema updated for frontend fields
+const medicalRecordSchema = new mongoose.Schema({
+  patientName: { type: String, required: true },
+  patientId: { type: String },
+  dateOfBirth: { type: String },
+  condition: { type: String, required: true },
+  treatment: { type: String },
+  medications: { type: String },
+  notes: { type: String },
+});
+
+// Billing schema updated for frontend fields
 const billingSchema = new mongoose.Schema({
-  patientName: String,
-  amount: Number,
-  paymentMethod: String,
+  patientName: { type: String, required: true },
+  patientId: { type: String },
+  serviceType: { type: String },
+  amount: { type: Number, required: true },
+  paymentMethod: { type: String, required: true },
+  insuranceProvider: { type: String },
+  insurancePolicyNumber: { type: String },
+  billingAddress: { type: String },
 });
 
 // Define models
@@ -144,11 +167,30 @@ app.get('/api/appointments', async (req, res) => {
   }
 });
 
-// Create new appointment route
-app.post('/api/appointments', async (req, res) => {
-  const appointment = new Appointment(req.body);
 
+// Create new appointment route (with all fields)
+app.post('/api/appointments', async (req, res) => {
+  const {
+    patientName,
+    patientId,
+    date,
+    time,
+    doctor,
+    reason,
+    status,
+    notes
+  } = req.body;
   try {
+    const appointment = new Appointment({
+      patientName,
+      patientId,
+      date,
+      time,
+      doctor,
+      reason,
+      status,
+      notes
+    });
     await appointment.save();
     res.status(201).json(appointment);
   } catch (error) {
@@ -156,11 +198,27 @@ app.post('/api/appointments', async (req, res) => {
   }
 });
 
-// Create new medical record route
-app.post('/api/medicalrecords', async (req, res) => {
-  const record = new MedicalRecord(req.body);
-
+// Create new medical record route (with all fields)
+app.post('/api/records', async (req, res) => {
+  const {
+    patientName,
+    patientId,
+    dateOfBirth,
+    condition,
+    treatment,
+    medications,
+    notes
+  } = req.body;
   try {
+    const record = new MedicalRecord({
+      patientName,
+      patientId,
+      dateOfBirth,
+      condition,
+      treatment,
+      medications,
+      notes
+    });
     await record.save();
     res.status(201).json(record);
   } catch (error) {
@@ -176,11 +234,30 @@ app.get('/api/users', async (req, res) => {
     res.status(500).json({ message: 'Error fetching users', error });
   }
 });
-// Create new billing record route
-app.post('/api/billings', async (req, res) => {
-  const billing = new Billing(req.body);
 
+// Create new billing record route (with all fields)
+app.post('/api/billings', async (req, res) => {
+  const {
+    patientName,
+    patientId,
+    serviceType,
+    amount,
+    paymentMethod,
+    insuranceProvider,
+    insurancePolicyNumber,
+    billingAddress
+  } = req.body;
   try {
+    const billing = new Billing({
+      patientName,
+      patientId,
+      serviceType,
+      amount,
+      paymentMethod,
+      insuranceProvider,
+      insurancePolicyNumber,
+      billingAddress
+    });
     await billing.save();
     res.status(201).json(billing);
   } catch (error) {
