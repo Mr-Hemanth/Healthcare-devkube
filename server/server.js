@@ -265,6 +265,7 @@ app.post('/api/billings', async (req, res) => {
   }
 });
 
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on http:localhost:${PORT}`); // Use public IP address
