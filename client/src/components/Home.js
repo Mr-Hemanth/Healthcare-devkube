@@ -1,7 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useProtectedNavigation } from '../hooks/useProtectedNavigation';
 
 const Home = () => {
+  const { navigateToProtectedRoute } = useProtectedNavigation();
+
   const cardStyle = {
     backgroundColor: '#ffffff',
     borderRadius: '8px',
@@ -137,7 +140,10 @@ const Home = () => {
             gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', 
             gap: '24px' 
           }}>
-            <Link to="/appointment-scheduling" style={featureCardStyle}>
+            <div 
+              style={{...featureCardStyle, cursor: 'pointer'}} 
+              onClick={() => navigateToProtectedRoute('/appointment-scheduling')}
+            >
               <div style={{ 
                 width: '64px',
                 height: '64px',
@@ -168,9 +174,12 @@ const Home = () => {
               }}>
                 Intelligent scheduling system with automated reminders, calendar integration, and real-time availability tracking for optimal resource allocation.
               </p>
-            </Link>
+            </div>
 
-            <Link to="/medical-record" style={featureCardStyle}>
+            <div 
+              style={{...featureCardStyle, cursor: 'pointer'}} 
+              onClick={() => navigateToProtectedRoute('/medical-record')}
+            >
               <div style={{ 
                 width: '64px',
                 height: '64px',
@@ -201,9 +210,12 @@ const Home = () => {
               }}>
                 HIPAA-compliant digital records management with advanced search, version control, and seamless provider collaboration capabilities.
               </p>
-            </Link>
+            </div>
 
-            <Link to="/billing" style={featureCardStyle}>
+            <div 
+              style={{...featureCardStyle, cursor: 'pointer'}} 
+              onClick={() => navigateToProtectedRoute('/billing')}
+            >
               <div style={{ 
                 width: '64px',
                 height: '64px',
@@ -234,7 +246,7 @@ const Home = () => {
               }}>
                 Automated billing workflows, insurance verification, claims processing, and comprehensive financial reporting for optimized revenue streams.
               </p>
-            </Link>
+            </div>
           </div>
         </div>
       </section>
