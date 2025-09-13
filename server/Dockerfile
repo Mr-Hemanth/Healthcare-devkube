@@ -7,7 +7,7 @@ WORKDIR /app
 # Install dependencies
 # Copy package.json and install only production dependencies to keep the image small
 COPY package*.json ./
-RUN npm install --only=production
+RUN npm install --omit=dev
 
 # Copy the entire backend codebase to the container
 COPY . .
