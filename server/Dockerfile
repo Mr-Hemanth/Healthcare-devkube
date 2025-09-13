@@ -13,7 +13,7 @@ RUN npm install --omit=dev
 COPY . .
 
 # Expose the port your app runs on
-EXPOSE 5003
+EXPOSE 5002
 
 # Start the backend server
 CMD ["node", "server.js"]

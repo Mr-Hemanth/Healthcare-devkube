@@ -11,10 +11,10 @@ const AdminPage = () => {
     const fetchData = async () => {
       try {
         if (activeTab === 'UserManagement') {
-          const response = await axios.get('http://localhost:5001/api/users');
+          const response = await axios.get('http://localhost:5002/api/users');
           setUsers(response.data);
         } else if (activeTab === 'AppointmentManagement') {
-          const response = await axios.get('http://localhost:5001/api/appointments');
+          const response = await axios.get('http://localhost:5002/api/appointments');
           setAppointments(response.data);
         }
       } catch (error) {

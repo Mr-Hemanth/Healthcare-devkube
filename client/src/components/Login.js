@@ -39,7 +39,7 @@ const Login = () => {
         const isEmail = identifier.includes('@');
         const payload = isEmail ? { email: identifier, password } : { username: identifier, password };
         
-        const response = await axios.post('http://localhost:5001/api/login', payload);
+        const response = await axios.post('http://localhost:5002/api/login', payload);
 
         if (response.data.message === 'Login successful') {
           // Create user data object

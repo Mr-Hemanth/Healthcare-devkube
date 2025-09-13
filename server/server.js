@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 require('dotenv').config(); // Add this at the top after your requires
 
 const app = express();
-const PORT = 5001; // Port specified directly
+const PORT = 5002; // Port specified directly
 
 // Middleware
 app.use(cors()); // Allow requests from your frontend's IP
