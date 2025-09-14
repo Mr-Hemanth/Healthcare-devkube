@@ -159,7 +159,7 @@ pipeline {
                         # Show which images are actually running
                         echo "==================================="
                         echo "Current running images:"
-                        kubectl get pods -n healthcare-app -o jsonpath="{range .items[*]}{.metadata.name}: {.spec.containers[*].image}{\"\n\"}{end}"
+                        kubectl get pods -n healthcare-app -o jsonpath='{range .items[*]}{.metadata.name}: {.spec.containers[*].image}{"\n"}{end}' || echo "Failed to retrieve pod image information"
                         echo "==================================="
                     '''
                 }
@@ -196,7 +196,7 @@ pipeline {
         always {
             echo 'Cleaning up Docker images...'
             sh '''
-                docker system prune -f || true
+                docker system prune -f || echo "Docker cleanup completed with warnings"
             '''
         }
         success {
