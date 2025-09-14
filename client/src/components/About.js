@@ -2,11 +2,11 @@ import React from 'react';
 
 const About = () => {
   const cardStyle = {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f60202ff',
     borderRadius: '8px',
     padding: '24px',
     margin: '12px',
-    boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
+    boxShadow: '0 2px 12px rgba(255, 255, 255, 0.08)',
     transition: 'transform 0.3s ease, box-shadow 0.3s ease',
     border: '1px solid #e8ecef',
   };
