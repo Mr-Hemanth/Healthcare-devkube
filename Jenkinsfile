@@ -116,42 +116,56 @@ pipeline {
         }
 
         stage('Deploy to GKE') {
-    steps {
-        script {
-            echo 'Deploying to Google Kubernetes Engine...'
-            sh '''
-                # Set auth plugin environment variable
-                export USE_GKE_GCLOUD_AUTH_PLUGIN=True
-                
-                # Verify plugin is available
-                gke-gcloud-auth-plugin --version || echo "Plugin check completed"
-                
-                # Re-authenticate to ensure fresh credentials
-                gcloud auth activate-service-account --key-file=${SERVICE_ACCOUNT_KEY}
-                gcloud config set project ${PROJECT_ID}
-                
-                # Get cluster credentials
-                gcloud container clusters get-credentials ${CLUSTER_NAME} --zone=${CLUSTER_ZONE}
-                
-                # Verify connection
-                kubectl cluster-info --request-timeout=10s
-                
-                # Deploy application
-                kubectl apply -f k8s/namespace.yaml
-                kubectl apply -f k8s/configmap.yaml
-                kubectl apply -f k8s/backend-deployment.yaml
-                kubectl apply -f k8s/frontend-deployment.yaml
-                
-                # Wait for deployments
-                kubectl wait --for=condition=available --timeout=300s deployment/healthcare-backend -n healthcare-app || echo "Backend deployment timeout"
-                kubectl wait --for=condition=available --timeout=300s deployment/healthcare-frontend -n healthcare-app || echo "Frontend deployment timeout"
-                
-                # Show deployment status
-                kubectl get all -n healthcare-app
-            '''
+            steps {
+                script {
+                    echo 'Deploying to Google Kubernetes Engine...'
+                    sh '''
+                        # Set auth plugin environment variable
+                        export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+                        
+                        # Verify plugin is available
+                        gke-gcloud-auth-plugin --version || echo "Plugin check completed"
+                        
+                        # Re-authenticate to ensure fresh credentials
+                        gcloud auth activate-service-account --key-file=${SERVICE_ACCOUNT_KEY}
+                        gcloud config set project ${PROJECT_ID}
+                        
+                        # Get cluster credentials
+                        gcloud container clusters get-credentials ${CLUSTER_NAME} --zone=${CLUSTER_ZONE}
+                        
+                        # Verify connection
+                        kubectl cluster-info --request-timeout=10s
+                        
+                        # Deploy application manifests
+                        kubectl apply -f k8s/namespace.yaml
+                        kubectl apply -f k8s/configmap.yaml
+                        kubectl apply -f k8s/backend-deployment.yaml
+                        kubectl apply -f k8s/frontend-deployment.yaml
+                        
+                        # CRITICAL: Force deployments to restart with new images
+                        echo "Forcing deployment restart to pull latest images..."
+                        kubectl rollout restart deployment/healthcare-backend -n healthcare-app
+                        kubectl rollout restart deployment/healthcare-frontend -n healthcare-app
+                        
+                        # Wait for rollout to complete with new images
+                        echo "Waiting for backend deployment to complete..."
+                        kubectl rollout status deployment/healthcare-backend -n healthcare-app --timeout=300s
+                        echo "Waiting for frontend deployment to complete..."
+                        kubectl rollout status deployment/healthcare-frontend -n healthcare-app --timeout=300s
+                        
+                        # Show final deployment status
+                        kubectl get all -n healthcare-app
+                        
+                        # Show which images are actually running
+                        echo "==================================="
+                        echo "Current running images:"
+                        kubectl get pods -n healthcare-app -o jsonpath="{range .items[*]}{.metadata.name}: {.spec.containers[*].image}{'\n'}{end}"
+                        echo "==================================="
+                    '''
+                }
+            }
         }
-    }
-}
+
         stage('Health Check') {
             steps {
                 script {
@@ -163,14 +177,14 @@ pipeline {
                         # Get service information
                         kubectl get services -n healthcare-app
 
-                        # Check backend health (internal)
-                        kubectl exec -n healthcare-app deployment/healthcare-backend -- curl -f http://localhost:5002/ || echo "Backend health check failed"
-
                         # Get external access information
                         echo "Frontend External Access:"
-                        kubectl get service healthcare-frontend-service -n healthcare-app -o jsonpath='{.spec.ports[0].nodePort}'
-                        echo ""
-                        kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}'
+                        NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
+                        NODE_PORT=$(kubectl get service healthcare-frontend-service -n healthcare-app -o jsonpath='{.spec.ports[0].nodePort}')
+                        
+                        echo "Application URL: http://$NODE_IP:$NODE_PORT"
+                        echo "Node IP: $NODE_IP"
+                        echo "Node Port: $NODE_PORT"
                         echo ""
                     '''
                 }
@@ -186,7 +200,7 @@ pipeline {
             '''
         }
         success {
-            echo 'Pipeline completed successfully! 🎉'
+            echo 'Pipeline completed successfully!'
             script {
                 sh '''
                     echo "==================================="
@@ -195,13 +209,13 @@ pipeline {
                     echo "✅ Backend: healthcare-backend"
                     echo "✅ Frontend: healthcare-frontend"
                     echo "✅ Namespace: healthcare-app"
+                    echo "✅ New images deployed and running"
                     echo ""
-                    echo "To access your application:"
-                    echo "Frontend: http://<NODE_IP>:30080"
-                    echo "Backend: http://<NODE_IP>:30080 (via frontend proxy)"
+                    NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
+                    NODE_PORT=$(kubectl get service healthcare-frontend-service -n healthcare-app -o jsonpath='{.spec.ports[0].nodePort}')
+                    echo "🌐 Application URL: http://$NODE_IP:$NODE_PORT"
                     echo ""
-                    echo "Get Node IP with:"
-                    echo "kubectl get nodes -o wide"
+                    echo "Changes from this build are now live!"
                     echo "==================================="
                 '''
             }
