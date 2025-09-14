@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: healthcare-config
+  namespace: healthcare-app
+  labels:
+    app: healthcare
+data:
+  # Backend Environment Variables
+  NODE_ENV: "production"
+  BACKEND_PORT: "5002"
+  FRONTEND_PORT: "3000"
+
+  # Database Configuration
+  MONGODB_URI: "mongodb+srv://devops:devops@devops.o4ykiod.mongodb.net/?retryWrites=true&w=majority&appName=devops"
+
+  # API Configuration
+  API_BASE_URL: "http://healthcare-backend-service:5002"
+
+  # Application Configuration
+  APP_NAME: "Healthcare DevKube"
+  LOG_LEVEL: "info"
+
+  # CORS Configuration
+  CORS_ORIGIN: "*"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: healthcare-secrets
+  namespace: healthcare-app
+  labels:
+    app: healthcare
+type: Opaque
+data:
+  # JWT Secret (base64 encoded)
+  JWT_SECRET: aGVhbHRoY2FyZS1qd3Qtc2VjcmV0LWtleQ==
+  # Admin credentials (base64 encoded)
+  ADMIN_USERNAME: YWRtaW4=
+  ADMIN_PASSWORD: YWRtaW4xMjM=
