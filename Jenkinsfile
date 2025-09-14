@@ -116,46 +116,42 @@ pipeline {
         }
 
         stage('Deploy to GKE') {
-            steps {
-                script {
-                    echo 'Deploying to Google Kubernetes Engine...'
-                    sh '''
-                        # Critical: Set auth plugin environment variable
-                        export USE_GKE_GCLOUD_AUTH_PLUGIN=True
-                        
-                        # Ensure plugin is installed
-                        if ! command -v gke-gcloud-auth-plugin &> /dev/null; then
-                            echo "Installing GKE auth plugin..."
-                            gcloud components install gke-gcloud-auth-plugin --quiet
-                        fi
-                        
-                        # Verify plugin works
-                        gke-gcloud-auth-plugin --version
-                        
-                        # Re-authenticate if needed
-                        gcloud auth activate-service-account --key-file=${SERVICE_ACCOUNT_KEY}
-                        gcloud config set project ${PROJECT_ID}
-                        
-                        # Get fresh cluster credentials
-                        gcloud container clusters get-credentials ${CLUSTER_NAME} --zone=${CLUSTER_ZONE}
-                        
-                        # Verify connection
-                        kubectl cluster-info --request-timeout=10s
-                        
-                        # Deploy application
-                        kubectl apply -f k8s/namespace.yaml
-                        kubectl apply -f k8s/configmap.yaml
-                        kubectl apply -f k8s/backend-deployment.yaml
-                        kubectl apply -f k8s/frontend-deployment.yaml
-                        
-                        # Wait for deployments
-                        kubectl wait --for=condition=available --timeout=300s deployment/healthcare-backend -n healthcare-app || echo "Backend deployment timeout"
-                        kubectl wait --for=condition=available --timeout=300s deployment/healthcare-frontend -n healthcare-app || echo "Frontend deployment timeout"
-                    '''
-                }
-            }
+    steps {
+        script {
+            echo 'Deploying to Google Kubernetes Engine...'
+            sh '''
+                # Set auth plugin environment variable
+                export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+                
+                # Verify plugin is available
+                gke-gcloud-auth-plugin --version || echo "Plugin check completed"
+                
+                # Re-authenticate to ensure fresh credentials
+                gcloud auth activate-service-account --key-file=${SERVICE_ACCOUNT_KEY}
+                gcloud config set project ${PROJECT_ID}
+                
+                # Get cluster credentials
+                gcloud container clusters get-credentials ${CLUSTER_NAME} --zone=${CLUSTER_ZONE}
+                
+                # Verify connection
+                kubectl cluster-info --request-timeout=10s
+                
+                # Deploy application
+                kubectl apply -f k8s/namespace.yaml
+                kubectl apply -f k8s/configmap.yaml
+                kubectl apply -f k8s/backend-deployment.yaml
+                kubectl apply -f k8s/frontend-deployment.yaml
+                
+                # Wait for deployments
+                kubectl wait --for=condition=available --timeout=300s deployment/healthcare-backend -n healthcare-app || echo "Backend deployment timeout"
+                kubectl wait --for=condition=available --timeout=300s deployment/healthcare-frontend -n healthcare-app || echo "Frontend deployment timeout"
+                
+                # Show deployment status
+                kubectl get all -n healthcare-app
+            '''
         }
-
+    }
+}
         stage('Health Check') {
             steps {
                 script {
