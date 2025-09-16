@@ -23,6 +23,10 @@ const getApiBaseUrl = () => {
 
   // Check if we're in production/Kubernetes
   if (process.env.NODE_ENV === 'production') {
+    // For local testing with port-forward, use localhost:8080
+    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      return 'http://localhost:8080';
+    }
     // Use external access via NodePort - same IP as frontend but different port
     return `http://${window.location.hostname}:30082`;
   }

@@ -25,6 +25,7 @@ spec:
       containers:
       - name: healthcare-frontend
         image: asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:latest
+        imagePullPolicy: Never
         ports:
         - containerPort: 3000
           protocol: TCP
