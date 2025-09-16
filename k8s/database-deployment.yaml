@@ -53,16 +53,22 @@ spec:
             - mongosh
             - --eval
             - "db.adminCommand('ping')"
-          initialDelaySeconds: 30
-          periodSeconds: 10
+          initialDelaySeconds: 60    # Increased for MongoDB initialization
+          periodSeconds: 30          # Check every 30 seconds
+          timeoutSeconds: 10         # Allow 10 seconds for response
+          failureThreshold: 3        # Fail after 3 consecutive failures
+          successThreshold: 1
         readinessProbe:
           exec:
             command:
             - mongosh
             - --eval
             - "db.adminCommand('ping')"
-          initialDelaySeconds: 5
-          periodSeconds: 5
+          initialDelaySeconds: 30    # Wait 30 seconds before first check
+          periodSeconds: 10          # Check every 10 seconds
+          timeoutSeconds: 10         # Allow 10 seconds for response
+          failureThreshold: 3        # Fail after 3 consecutive failures
+          successThreshold: 1
       volumes:
       - name: mongodb-data
         persistentVolumeClaim:
