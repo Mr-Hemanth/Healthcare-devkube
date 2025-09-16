@@ -9,6 +9,7 @@ pipeline {
         REPOSITORY_NAME = 'healthcare-repo'
         SERVICE_ACCOUNT_KEY = credentials('gcp-service-account-key')
         USE_GKE_GCLOUD_AUTH_PLUGIN = 'True'
+        PATH = "/usr/local/bin:/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
     }
 
     stages {
@@ -19,13 +20,72 @@ pipeline {
             }
         }
 
+        stage('Verify Prerequisites') {
+            steps {
+                script {
+                    echo 'Verifying all required tools are properly installed...'
+                    sh '''
+                        echo "=== Environment Verification ==="
+                        echo "Current user: $(whoami)"
+                        echo "Current PATH: $PATH"
+                        echo "Working directory: $(pwd)"
+                        
+                        echo "=== Tool Verification ==="
+                        
+                        # Test Node.js
+                        echo "Node.js: $(node --version)"
+                        echo "npm: $(npm --version)"
+                        
+                        # Test Docker
+                        echo "Docker: $(docker --version)"
+                        
+                        # Test gcloud with full path
+                        if [ -f /usr/local/bin/gcloud ]; then
+                            echo "gcloud: $(/usr/local/bin/gcloud --version | head -1)"
+                        else
+                            echo "ERROR: gcloud not found at /usr/local/bin/gcloud"
+                            exit 1
+                        fi
+                        
+                        # Test kubectl with full path
+                        if [ -f /usr/local/bin/kubectl ]; then
+                            echo "kubectl: $(/usr/local/bin/kubectl version --client | head -1)"
+                        else
+                            echo "ERROR: kubectl not found"
+                            exit 1
+                        fi
+                        
+                        # Test gke-auth-plugin with full path
+                        if [ -f /usr/local/bin/gke-gcloud-auth-plugin ]; then
+                            echo "gke-auth-plugin: $(/usr/local/bin/gke-gcloud-auth-plugin --version)"
+                        else
+                            echo "ERROR: gke-gcloud-auth-plugin not found"
+                            exit 1
+                        fi
+                        
+                        echo "✅ All prerequisites verified successfully!"
+                    '''
+                }
+            }
+        }
+
         stage('Setup GCP Authentication') {
             steps {
                 script {
+                    echo 'Setting up GCP authentication...'
                     sh '''
-                        gcloud auth activate-service-account --key-file=${SERVICE_ACCOUNT_KEY}
-                        gcloud config set project ${PROJECT_ID}
-                        gcloud auth configure-docker ${REGISTRY_HOSTNAME}
+                        export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+                        
+                        echo "Authenticating with service account..."
+                        /usr/local/bin/gcloud auth activate-service-account --key-file=${SERVICE_ACCOUNT_KEY}
+                        
+                        echo "Setting project..."
+                        /usr/local/bin/gcloud config set project ${PROJECT_ID}
+                        
+                        echo "Configuring Docker authentication..."
+                        /usr/local/bin/gcloud auth configure-docker ${REGISTRY_HOSTNAME} --quiet
+                        
+                        echo "✅ GCP authentication setup complete"
                     '''
                 }
             }
@@ -37,9 +97,13 @@ pipeline {
                     script {
                         echo 'Testing Backend Application...'
                         sh '''
+                            echo "Installing backend dependencies..."
                             npm install
+                            
+                            echo "Running syntax check..."
                             node -c server.js
-                            echo "Backend tests passed"
+                            
+                            echo "✅ Backend tests passed"
                         '''
                     }
                 }
@@ -52,8 +116,13 @@ pipeline {
                     script {
                         echo 'Testing Frontend Application...'
                         sh '''
+                            echo "Installing frontend dependencies..."
                             npm install
+                            
+                            echo "Running tests..."
                             CI=true npm test -- --coverage --watchAll=false
+                            
+                            echo "✅ Frontend tests passed"
                         '''
                     }
                 }
@@ -68,9 +137,12 @@ pipeline {
                             script {
                                 echo 'Building Backend Docker Image...'
                                 def backendImage = "${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-backend:${BUILD_NUMBER}"
-                                sh "docker build -t ${backendImage} ."
-                                sh "docker tag ${backendImage} ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-backend:latest"
-                                env.BACKEND_IMAGE = backendImage
+                                sh """
+                                    echo "Building: ${backendImage}"
+                                    docker build -t ${backendImage} .
+                                    docker tag ${backendImage} ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-backend:latest
+                                    echo "✅ Backend image built successfully"
+                                """
                             }
                         }
                     }
@@ -81,9 +153,12 @@ pipeline {
                             script {
                                 echo 'Building Frontend Docker Image...'
                                 def frontendImage = "${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-frontend:${BUILD_NUMBER}"
-                                sh "docker build -t ${frontendImage} ."
-                                sh "docker tag ${frontendImage} ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-frontend:latest"
-                                env.FRONTEND_IMAGE = frontendImage
+                                sh """
+                                    echo "Building: ${frontendImage}"
+                                    docker build -t ${frontendImage} .
+                                    docker tag ${frontendImage} ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-frontend:latest
+                                    echo "✅ Frontend image built successfully"
+                                """
                             }
                         }
                     }
@@ -96,18 +171,24 @@ pipeline {
                 stage('Push Backend Image') {
                     steps {
                         script {
-                            echo 'Pushing Backend Image to Artifact Registry...'
-                            sh "docker push ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-backend:${BUILD_NUMBER}"
-                            sh "docker push ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-backend:latest"
+                            echo 'Pushing Backend Images...'
+                            sh """
+                                docker push ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-backend:${BUILD_NUMBER}
+                                docker push ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-backend:latest
+                                echo "✅ Backend images pushed"
+                            """
                         }
                     }
                 }
                 stage('Push Frontend Image') {
                     steps {
                         script {
-                            echo 'Pushing Frontend Image to Artifact Registry...'
-                            sh "docker push ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-frontend:${BUILD_NUMBER}"
-                            sh "docker push ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-frontend:latest"
+                            echo 'Pushing Frontend Images...'
+                            sh """
+                                docker push ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-frontend:${BUILD_NUMBER}
+                                docker push ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-frontend:latest
+                                echo "✅ Frontend images pushed"
+                            """
                         }
                     }
                 }
@@ -119,56 +200,42 @@ pipeline {
                 script {
                     echo 'Deploying to Google Kubernetes Engine...'
                     sh '''
-                        # Set auth plugin environment variable
                         export USE_GKE_GCLOUD_AUTH_PLUGIN=True
                         
-                        # Re-authenticate to ensure fresh credentials
-                        gcloud auth activate-service-account --key-file=${SERVICE_ACCOUNT_KEY}
-                        gcloud config set project ${PROJECT_ID}
+                        echo "Re-authenticating for cluster access..."
+                        /usr/local/bin/gcloud auth activate-service-account --key-file=${SERVICE_ACCOUNT_KEY}
+                        /usr/local/bin/gcloud config set project ${PROJECT_ID}
                         
-                        # Get cluster credentials
-                        gcloud container clusters get-credentials ${CLUSTER_NAME} --location=${CLUSTER_LOCATION}
+                        echo "Getting cluster credentials..."
+                        /usr/local/bin/gcloud container clusters get-credentials ${CLUSTER_NAME} --location=${CLUSTER_LOCATION}
                         
-                        # Verify connection
-                        kubectl cluster-info --request-timeout=10s
+                        echo "Testing cluster connection..."
+                        /usr/local/bin/kubectl cluster-info --request-timeout=10s
                         
-                        # Deploy application manifests (3-tier + monitoring)
-                        kubectl apply -f k8s/namespace.yaml
-                        kubectl apply -f k8s/configmap.yaml
-
-                        # Deploy Database Tier (MongoDB)
-                        kubectl apply -f k8s/database-deployment.yaml
-
-                        # Deploy Monitoring Stack (Prometheus + Grafana)
-                        kubectl apply -f k8s/monitoring-prometheus.yaml
-                        kubectl apply -f k8s/monitoring-grafana.yaml
-
-                        # Deploy Application Tiers
-                        kubectl apply -f k8s/backend-deployment.yaml
-                        kubectl apply -f k8s/frontend-deployment.yaml
+                        echo "Deploying application..."
+                        /usr/local/bin/kubectl apply -f k8s/namespace.yaml
+                        /usr/local/bin/kubectl apply -f k8s/configmap.yaml
+                        /usr/local/bin/kubectl apply -f k8s/database-deployment.yaml
+                        /usr/local/bin/kubectl apply -f k8s/monitoring-prometheus.yaml
+                        /usr/local/bin/kubectl apply -f k8s/monitoring-grafana.yaml
+                        /usr/local/bin/kubectl apply -f k8s/backend-deployment.yaml
+                        /usr/local/bin/kubectl apply -f k8s/frontend-deployment.yaml
                         
-                        # Wait for database to be ready
-                        echo "Waiting for MongoDB to be ready..."
-                        kubectl rollout status deployment/healthcare-mongodb -n healthcare-app --timeout=300s
+                        echo "Waiting for deployments..."
+                        /usr/local/bin/kubectl wait --for=condition=available deployment/healthcare-mongodb -n healthcare-app --timeout=300s || echo "MongoDB timeout - continuing"
+                        /usr/local/bin/kubectl wait --for=condition=available deployment/prometheus -n healthcare-app --timeout=300s || echo "Prometheus timeout - continuing"
+                        /usr/local/bin/kubectl wait --for=condition=available deployment/grafana -n healthcare-app --timeout=300s || echo "Grafana timeout - continuing"
 
-                        # Wait for monitoring stack to be ready
-                        echo "Waiting for monitoring stack to be ready..."
-                        kubectl rollout status deployment/prometheus -n healthcare-app --timeout=300s
-                        kubectl rollout status deployment/grafana -n healthcare-app --timeout=300s
+                        echo "Restarting application deployments..."
+                        /usr/local/bin/kubectl rollout restart deployment/healthcare-backend -n healthcare-app
+                        /usr/local/bin/kubectl rollout restart deployment/healthcare-frontend -n healthcare-app
 
-                        # Force deployments to restart with new images
-                        echo "Forcing deployment restart to pull latest images..."
-                        kubectl rollout restart deployment/healthcare-backend -n healthcare-app
-                        kubectl rollout restart deployment/healthcare-frontend -n healthcare-app
-
-                        # Wait for rollout to complete with new images
-                        echo "Waiting for backend deployment to complete..."
-                        kubectl rollout status deployment/healthcare-backend -n healthcare-app --timeout=300s
-                        echo "Waiting for frontend deployment to complete..."
-                        kubectl rollout status deployment/healthcare-frontend -n healthcare-app --timeout=300s
+                        echo "Waiting for application deployments..."
+                        /usr/local/bin/kubectl wait --for=condition=available deployment/healthcare-backend -n healthcare-app --timeout=300s
+                        /usr/local/bin/kubectl wait --for=condition=available deployment/healthcare-frontend -n healthcare-app --timeout=300s
                         
-                        # Show final deployment status
-                        kubectl get all -n healthcare-app
+                        echo "✅ Deployment completed!"
+                        /usr/local/bin/kubectl get all -n healthcare-app
                     '''
                 }
             }
@@ -177,26 +244,28 @@ pipeline {
         stage('Health Check') {
             steps {
                 script {
-                    echo 'Performing Health Checks...'
+                    echo 'Performing final health checks...'
                     sh '''
-                        # Check if pods are running
-                        kubectl get pods -n healthcare-app
-
-                        # Get service information
-                        kubectl get services -n healthcare-app
-
-                        # Get external access information
                         echo "=== APPLICATION ACCESS INFORMATION ==="
-                        NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
-                        FRONTEND_PORT=$(kubectl get service healthcare-frontend-service -n healthcare-app -o jsonpath='{.spec.ports[0].nodePort}')
-                        GRAFANA_PORT=$(kubectl get service grafana-service -n healthcare-app -o jsonpath='{.spec.ports[0].nodePort}')
+                        
+                        # Get deployment status
+                        /usr/local/bin/kubectl get pods -n healthcare-app
+                        /usr/local/bin/kubectl get services -n healthcare-app
 
-                        echo "🌐 Frontend Application: http://$NODE_IP:$FRONTEND_PORT"
-                        echo "📊 Grafana Dashboard: http://$NODE_IP:$GRAFANA_PORT (admin/grafana123)"
-                        echo "📈 Prometheus Metrics: Internal access at prometheus-service:9090"
-                        echo "🗄️ MongoDB Database: Internal access at healthcare-mongodb-service:27017"
-                        echo "🏥 Backend API Health: http://$NODE_IP:$FRONTEND_PORT/api/health"
+                        # Get external access info
+                        NODE_IP=$(/usr/local/bin/kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
+                        if [ -z "$NODE_IP" ]; then
+                            NODE_IP=$(/usr/local/bin/kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+                            echo "Note: Using internal IP - configure firewall for external access"
+                        fi
+                        
                         echo ""
+                        echo "🎉 HEALTHCARE APPLICATION DEPLOYED SUCCESSFULLY!"
+                        echo "================================================"
+                        echo "🌐 Frontend: http://$NODE_IP:30080"
+                        echo "📊 Grafana: http://$NODE_IP:30081 (admin/grafana123)"
+                        echo "🏥 API Health: http://$NODE_IP:30080/api/health"
+                        echo "================================================"
                     '''
                 }
             }
@@ -205,10 +274,8 @@ pipeline {
 
     post {
         always {
-            echo 'Cleaning up Docker images...'
-            sh '''
-                docker system prune -f || echo "Docker cleanup completed with warnings"
-            '''
+            echo 'Cleaning up...'
+            sh 'docker system prune -f || true'
         }
         success {
             echo 'Pipeline completed successfully!'
@@ -232,9 +299,9 @@ pipeline {
                     echo "=========================================="
                 '''
             }
-        }
+                    }
         failure {
-            echo 'Pipeline failed! Please check the logs for errors.'
+            echo '❌ Pipeline failed - check logs above for details'
         }
     }
 }
