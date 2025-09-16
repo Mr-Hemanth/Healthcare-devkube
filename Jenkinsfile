@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        PROJECT_ID = 'healthcare-devkube'
-        CLUSTER_NAME = 'healthcare-cluster'
-        CLUSTER_ZONE = 'asia-south1'
+        PROJECT_ID = 'healthcare-devkube-2'
+        CLUSTER_NAME = 'healthcare2-cluster'
+        CLUSTER_LOCATION = 'asia-south1'
         REGISTRY_HOSTNAME = 'asia-south1-docker.pkg.dev'
         REPOSITORY_NAME = 'healthcare-repo'
         SERVICE_ACCOUNT_KEY = credentials('gcp-service-account-key')
@@ -30,6 +30,7 @@ pipeline {
                 }
             }
         }
+        
 
         stage('Test Backend') {
             steps {
@@ -132,7 +133,7 @@ pipeline {
                         gcloud config set project ${PROJECT_ID}
                         
                         # Get cluster credentials
-                        gcloud container clusters get-credentials ${CLUSTER_NAME} --zone=${CLUSTER_ZONE}
+                        gcloud container clusters get-credentials ${CLUSTER_NAME} --location=${CLUSTER_LOCATION}
                         
                         # Verify connection
                         kubectl cluster-info --request-timeout=10s

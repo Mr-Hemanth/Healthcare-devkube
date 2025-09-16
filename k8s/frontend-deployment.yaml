@@ -19,7 +19,7 @@ spec:
     spec:
       containers:
       - name: healthcare-frontend
-        image: asia-south1-docker.pkg.dev/healthcare-devkube/healthcare-repo/healthcare-frontend:latest
+        image: asia-south1-docker.pkg.dev/healthcare-devkube-2/healthcare-repo/healthcare-frontend:latest
         ports:
         - containerPort: 3000
           protocol: TCP
