@@ -93,6 +93,7 @@ pipeline {
         }
 
         stage('Push Images to Artifact Registry') {
+            
             parallel {
                 stage('Push Backend Image') {
                     steps {
