@@ -23,9 +23,8 @@ const getApiBaseUrl = () => {
 
   // Check if we're in production/Kubernetes
   if (process.env.NODE_ENV === 'production') {
-    // In Kubernetes, we'll use the backend service directly
-    // This assumes the frontend can reach the backend service
-    return 'http://healthcare-backend-service.healthcare-app.svc.cluster.local:5002';
+    // Use external access via NodePort - same IP as frontend but different port
+    return `http://${window.location.hostname}:30082`;
   }
 
   // Development fallback
