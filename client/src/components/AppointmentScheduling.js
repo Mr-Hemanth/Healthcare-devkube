@@ -1,6 +1,6 @@
 // AppointmentScheduling.js
 import React, { useState } from 'react';
-import axios from 'axios';
+import { apiClient, API_ENDPOINTS } from '../config/api';
 
 const AppointmentScheduling = () => {
   const [patientName, setPatientName] = useState('');
@@ -16,7 +16,7 @@ const AppointmentScheduling = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      await axios.post('http://localhost:5002/api/appointments', {
+      await apiClient.post(API_ENDPOINTS.APPOINTMENTS, {
         patientName,
         date,
         time,

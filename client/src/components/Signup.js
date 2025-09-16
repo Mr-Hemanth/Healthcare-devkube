@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { apiClient, API_ENDPOINTS } from '../config/api';
 
 const Signup = () => {
   const [username, setUsername] = useState('');
@@ -52,7 +52,7 @@ const Signup = () => {
     setFieldErrors({});
     
     try {
-      await axios.post('http://localhost:5002/api/signup', { 
+      await apiClient.post(API_ENDPOINTS.SIGNUP, {
         username,
         email,
         password,

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { apiClient, API_ENDPOINTS } from '../config/api';
 
 const AdminPage = () => {
   const [activeTab, setActiveTab] = useState('UserManagement');
@@ -11,10 +11,10 @@ const AdminPage = () => {
     const fetchData = async () => {
       try {
         if (activeTab === 'UserManagement') {
-          const response = await axios.get('http://localhost:5002/api/users');
+          const response = await apiClient.get(API_ENDPOINTS.USERS);
           setUsers(response.data);
         } else if (activeTab === 'AppointmentManagement') {
-          const response = await axios.get('http://localhost:5002/api/appointments');
+          const response = await apiClient.get(API_ENDPOINTS.APPOINTMENTS);
           setAppointments(response.data);
         }
       } catch (error) {

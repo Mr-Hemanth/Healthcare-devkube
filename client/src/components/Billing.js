@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { apiClient, API_ENDPOINTS } from '../config/api';
 
 const Billing = () => {
   // --- State Management ---
@@ -43,7 +43,7 @@ const Billing = () => {
 
     try {
       // API call to the backend to process billing
-      const response = await axios.post('http://localhost:5002/api/billings', {
+      const response = await apiClient.post(API_ENDPOINTS.BILLINGS, {
         patientName,
         patientId,
         serviceType,

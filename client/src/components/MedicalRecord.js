@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { apiClient, API_ENDPOINTS } from '../config/api';
 
 const MedicalRecordManagement = () => {
   // --- State Management ---
@@ -23,7 +23,7 @@ const MedicalRecordManagement = () => {
 
     try {
       // API call to the backend to save the medical record
-      const response = await axios.post('http://localhost:5002/api/records', {
+      const response = await apiClient.post(API_ENDPOINTS.RECORDS, {
         patientName,
         patientId,
         dateOfBirth,

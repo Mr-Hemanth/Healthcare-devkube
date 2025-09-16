@@ -56,13 +56,14 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
+      args:
+        REACT_APP_API_BASE_URL: http://backend:5002
     container_name: healthcare-frontend
     restart: always
     ports:
       - "3000:3000"
     environment:
       NODE_ENV: development
-      REACT_APP_API_BASE_URL: http://localhost:5002
     depends_on:
       backend:
         condition: service_healthy

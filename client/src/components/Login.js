@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Box, TextField, Button, Typography, Link, Checkbox, FormControlLabel } from '@mui/material';
-import axios from 'axios';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { apiClient, API_ENDPOINTS } from '../config/api';
 
 const Login = () => {
   const [identifier, setIdentifier] = useState('');
@@ -39,7 +39,7 @@ const Login = () => {
         const isEmail = identifier.includes('@');
         const payload = isEmail ? { email: identifier, password } : { username: identifier, password };
         
-        const response = await axios.post('http://localhost:5002/api/login', payload);
+        const response = await apiClient.post(API_ENDPOINTS.LOGIN, payload);
 
         if (response.data.message === 'Login successful') {
           // Create user data object

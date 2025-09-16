@@ -155,9 +155,12 @@ pipeline {
                                 def frontendImage = "${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-frontend:${BUILD_NUMBER}"
                                 sh """
                                     echo "Building: ${frontendImage}"
-                                    docker build -t ${frontendImage} .
+                                    echo "Setting API base URL for Kubernetes environment..."
+                                    docker build \\
+                                        --build-arg REACT_APP_API_BASE_URL=http://healthcare-backend-service.healthcare-app.svc.cluster.local:5002 \\
+                                        -t ${frontendImage} .
                                     docker tag ${frontendImage} ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-frontend:latest
-                                    echo "✅ Frontend image built successfully"
+                                    echo "✅ Frontend image built successfully with Kubernetes API URL"
                                 """
                             }
                         }

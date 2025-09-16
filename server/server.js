@@ -8,7 +8,21 @@ const app = express();
 const PORT = process.env.PORT || 5002; // Use environment variable or fallback
 
 // Middleware
-app.use(cors()); // Allow requests from your frontend's IP
+// Configure CORS to allow requests from frontend services
+const corsOptions = {
+  origin: [
+    'http://localhost:3000',  // Local development
+    'http://frontend:3000',   // Docker compose
+    'http://healthcare-frontend-service:3000',  // Kubernetes service
+    'http://healthcare-frontend-service.healthcare-app.svc.cluster.local:3000',  // Full Kubernetes DNS
+    process.env.CORS_ORIGIN   // Environment override
+  ].filter(Boolean), // Remove undefined values
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json()); // Parse JSON requests
 
 // Root route
