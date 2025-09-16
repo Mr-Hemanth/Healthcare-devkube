@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     environment {
-        PROJECT_ID = 'healthcare-devkube-2'
-        CLUSTER_NAME = 'healthcare2-cluster'
+        PROJECT_ID = 'hc-3-monitoring'
+        CLUSTER_NAME = 'healthcare3-cluster'
         CLUSTER_LOCATION = 'asia-south1'
         REGISTRY_HOSTNAME = 'asia-south1-docker.pkg.dev'
         REPOSITORY_NAME = 'healthcare-repo'
@@ -30,7 +30,6 @@ pipeline {
                 }
             }
         }
-        
 
         stage('Test Backend') {
             steps {
@@ -39,7 +38,6 @@ pipeline {
                         echo 'Testing Backend Application...'
                         sh '''
                             npm install
-                            # Basic syntax check
                             node -c server.js
                             echo "Backend tests passed"
                         '''
@@ -94,7 +92,6 @@ pipeline {
         }
 
         stage('Push Images to Artifact Registry') {
-            
             parallel {
                 stage('Push Backend Image') {
                     steps {
@@ -124,9 +121,6 @@ pipeline {
                     sh '''
                         # Set auth plugin environment variable
                         export USE_GKE_GCLOUD_AUTH_PLUGIN=True
-                        
-                        # Verify plugin is available
-                        gke-gcloud-auth-plugin --version || echo "Plugin check completed"
                         
                         # Re-authenticate to ensure fresh credentials
                         gcloud auth activate-service-account --key-file=${SERVICE_ACCOUNT_KEY}
@@ -162,7 +156,7 @@ pipeline {
                         kubectl rollout status deployment/prometheus -n healthcare-app --timeout=300s
                         kubectl rollout status deployment/grafana -n healthcare-app --timeout=300s
 
-                        # CRITICAL: Force deployments to restart with new images
+                        # Force deployments to restart with new images
                         echo "Forcing deployment restart to pull latest images..."
                         kubectl rollout restart deployment/healthcare-backend -n healthcare-app
                         kubectl rollout restart deployment/healthcare-frontend -n healthcare-app
@@ -175,12 +169,6 @@ pipeline {
                         
                         # Show final deployment status
                         kubectl get all -n healthcare-app
-                        
-                        # Show which images are actually running
-                        echo "==================================="
-                        echo "Current running images:"
-                        kubectl get pods -n healthcare-app -o jsonpath='{range .items[*]}{.metadata.name}: {.spec.containers[*].image}{"\n"}{end}' || echo "Failed to retrieve pod image information"
-                        echo "==================================="
                     '''
                 }
             }

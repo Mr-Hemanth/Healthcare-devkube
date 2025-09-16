@@ -24,7 +24,7 @@ spec:
     spec:
       containers:
       - name: healthcare-backend
-        image: asia-south1-docker.pkg.dev/healthcare-devkube-2/healthcare-repo/healthcare-backend:latest
+        image: asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend:latest
         ports:
         - containerPort: 5002
           protocol: TCP
