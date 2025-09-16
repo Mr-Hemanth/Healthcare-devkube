@@ -15,6 +15,7 @@ const corsOptions = {
     'http://frontend:3000',   // Docker compose
     'http://healthcare-frontend-service:3000',  // Kubernetes service
     'http://healthcare-frontend-service.healthcare-app.svc.cluster.local:3000',  // Full Kubernetes DNS
+    'http://34.180.18.177:30080',  // External NodePort access
     process.env.CORS_ORIGIN   // Environment override
   ].filter(Boolean), // Remove undefined values
   credentials: true,
