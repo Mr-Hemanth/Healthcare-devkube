@@ -68,14 +68,8 @@ data:
             "title": "Application Health",
             "type": "stat",
             "targets": [
-              {
-                "expr": "up{job=\"healthcare-backend\"}",
-                "legendFormat": "Backend Status"
-              },
-              {
-                "expr": "up{job=\"healthcare-frontend\"}",
-                "legendFormat": "Frontend Status"
-              }
+              {"expr": "up{job=\"healthcare-backend\"}", "legendFormat": "Backend Status"},
+              {"expr": "up{job=\"healthcare-frontend\"}", "legendFormat": "Frontend Status"}
             ],
             "fieldConfig": {
               "defaults": {
@@ -97,10 +91,7 @@ data:
             "title": "HTTP Requests Rate",
             "type": "graph",
             "targets": [
-              {
-                "expr": "rate(http_requests_total[5m])",
-                "legendFormat": "{{method}} {{handler}}"
-              }
+              {"expr": "rate(http_requests_total[5m])", "legendFormat": "{{method}} {{handler}}"}
             ],
             "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
           },
@@ -109,18 +100,12 @@ data:
             "title": "Database Connections",
             "type": "graph",
             "targets": [
-              {
-                "expr": "mongodb_connections{state=\"current\"}",
-                "legendFormat": "Active Connections"
-              }
+              {"expr": "mongodb_connections{state=\"current\"}", "legendFormat": "Active Connections"}
             ],
             "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8}
           }
         ],
-        "time": {
-          "from": "now-1h",
-          "to": "now"
-        },
+        "time": {"from": "now-1h", "to": "now"},
         "refresh": "30s"
       }
     }
@@ -143,25 +128,19 @@ spec:
       labels:
         app: grafana
         component: monitoring
-      annotations:
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "3000"
-        prometheus.io/path: "/metrics"
     spec:
+      securityContext:
+        fsGroup: 472   # grafana internal group
       containers:
       - name: grafana
         image: grafana/grafana:10.2.0
         ports:
         - containerPort: 3000
-          protocol: TCP
         env:
         - name: GF_SECURITY_ADMIN_USER
           value: "admin"
         - name: GF_SECURITY_ADMIN_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: healthcare-secrets
-              key: GRAFANA_PASSWORD
+          value: "admin123"   # ❌ Remove if using secret
         - name: GF_SERVER_HTTP_PORT
           value: "3000"
         - name: GF_INSTALL_PLUGINS
@@ -233,9 +212,6 @@ metadata:
   labels:
     app: grafana
     component: monitoring
-  annotations:
-    prometheus.io/scrape: "true"
-    prometheus.io/port: "3000"
 spec:
   type: NodePort
   ports:
