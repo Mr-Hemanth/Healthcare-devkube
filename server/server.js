@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 5002; // Use environment variable or fallback
 // Middleware
 // Configure CORS to allow requests from frontend services
 const corsOptions = {
-  origin: [
+  origin: process.env.CORS_ORIGIN === '*' ? true : [
     'http://localhost:3000',  // Local development
     'http://frontend:3000',   // Docker compose
     'http://healthcare-frontend-service:3000',  // Kubernetes service
