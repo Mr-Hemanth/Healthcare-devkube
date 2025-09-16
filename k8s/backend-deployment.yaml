@@ -16,6 +16,11 @@ spec:
       labels:
         app: healthcare-backend
         component: backend
+        tier: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5002"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: healthcare-backend

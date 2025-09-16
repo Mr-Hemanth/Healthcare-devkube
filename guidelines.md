@@ -6,7 +6,7 @@ This document provides a comprehensive implementation guide for setting up a com
 
 ### Target Workflow
 ```
-GitHub Commit → Jenkins Tests → Docker Build → Push to Registry → CI/CD Deploys → Kubernetes Cluster → App Accessible
+GitHub Commit → Jenkins Tests → Docker Build → Push to Registry → CI/CD Deploys → 3-Tier Kubernetes Cluster → Monitoring (Prometheus + Grafana) → App Accessible
 ```
 
 ### Architecture Components
@@ -14,13 +14,17 @@ GitHub Commit → Jenkins Tests → Docker Build → Push to Registry → CI/CD 
 - **CI/CD Server**: Jenkins on GCP Compute Engine
 - **Container Registry**: GCP Artifact Registry
 - **Orchestration**: Google Kubernetes Engine (GKE) Autopilot
-- **Database**: MongoDB Atlas (Existing)
 - **Region**: asia-south1 (South India)
 
-### Application Stack
-- **Frontend**: React.js (Port 3000)
-- **Backend**: Node.js/Express (Port 5002)
-- **Database**: MongoDB Atlas (Cloud)
+### 3-Tier Application Architecture
+- **Presentation Tier**: React.js Frontend (Port 3000) - NodePort 30080
+- **Application Tier**: Node.js/Express Backend (Port 5002) - ClusterIP
+- **Data Tier**: MongoDB Database (Port 27017) - In-cluster deployment
+
+### Monitoring Stack
+- **Metrics Collection**: Prometheus (Port 9090) - ClusterIP
+- **Visualization**: Grafana (Port 3001) - NodePort 30081
+- **Dashboards**: Healthcare application metrics, system performance
 
 ---
 
@@ -160,11 +164,14 @@ GitHub Commit → Jenkins Tests → Docker Build → Push to Registry → CI/CD 
 - [ ] Configure Jenkins credentials with service account key
 - [ ] Test service account permissions
 
-### ✅ **Step 7: Kubernetes Deployment Manifests**
-- [ ] Create deployment manifest for React frontend
-- [ ] Create deployment manifest for Node.js backend
-- [ ] Create service manifests (ClusterIP for backend, NodePort for frontend)
-- [ ] Create ConfigMap for environment variables
+### ✅ **Step 7: 3-Tier Architecture & Monitoring Manifests**
+- [ ] Create MongoDB database deployment with persistent storage
+- [ ] Create deployment manifest for Node.js backend (application tier)
+- [ ] Create deployment manifest for React frontend (presentation tier)
+- [ ] Create Prometheus monitoring configuration with RBAC
+- [ ] Create Grafana dashboard with pre-configured datasources
+- [ ] Create service manifests (ClusterIP for backend/database, NodePort for frontend/Grafana)
+- [ ] Create ConfigMap for environment variables and monitoring configs
 - [ ] Create namespace and resource quotas
 - [ ] Test manifests locally: `kubectl apply --dry-run=client -f manifests/`
 - [ ] Validate YAML syntax and Kubernetes API compatibility
@@ -178,8 +185,9 @@ GitHub Commit → Jenkins Tests → Docker Build → Push to Registry → CI/CD 
   - [ ] Test stage (npm test for both client and server)
   - [ ] Docker build stage
   - [ ] Push to Artifact Registry stage
-  - [ ] Deploy to GKE stage
-  - [ ] Health check stage
+  - [ ] Deploy 3-tier architecture to GKE stage
+  - [ ] Deploy monitoring stack (Prometheus + Grafana) stage
+  - [ ] Health check stage with monitoring endpoints
 - [ ] Configure pipeline to trigger on main branch commits
 - [ ] Test manual pipeline execution
 - [ ] Verify webhook functionality
@@ -208,14 +216,15 @@ GitHub Commit → Jenkins Tests → Docker Build → Push to Registry → CI/CD 
 - [ ] Perform rollback test if needed
 - [ ] Document external access URLs and credentials
 
-### ✅ **Step 11: Monitoring & Cleanup**
-- [ ] Set up basic monitoring for GKE cluster
-- [ ] Configure resource limits and requests for deployments
+### ✅ **Step 11: Monitoring & Operations**
+- [ ] Configure Prometheus to scrape all application metrics
+- [ ] Set up Grafana dashboards for application and infrastructure monitoring
+- [ ] Configure alerts for critical metrics (CPU, memory, database connections)
 - [ ] Set up log aggregation for troubleshooting
-- [ ] Document pipeline execution times and resource usage
+- [ ] Document monitoring access URLs and credentials
 - [ ] Create troubleshooting guide for common issues
 - [ ] Set up automated cleanup policies for old Docker images
-- [ ] Configure backup strategy for Jenkins configuration
+- [ ] Configure backup strategy for MongoDB data and Jenkins configuration
 - [ ] Document cost optimization recommendations
 
 ---
@@ -224,10 +233,11 @@ GitHub Commit → Jenkins Tests → Docker Build → Push to Registry → CI/CD 
 
 Upon successful completion:
 - ✅ Fully automated CI/CD pipeline from GitHub to Kubernetes
-- ✅ Containerized Healthcare application running on GKE
+- ✅ Complete 3-tier architecture: React frontend, Node.js backend, MongoDB database
+- ✅ Comprehensive monitoring with Prometheus metrics collection and Grafana dashboards
 - ✅ Automatic deployment on every main branch commit
 - ✅ Production-ready infrastructure on Google Cloud Platform
-- ✅ Monitoring and logging capabilities
+- ✅ Real-time application and infrastructure monitoring
 - ✅ Scalable and maintainable deployment architecture
 
 ## Estimated Timeline
@@ -322,5 +332,32 @@ GitHub Push → Jenkins Triggered → Tests Pass → Images Built →
 Registry Push → Kubernetes Deploy → Health Checks → App Live ✅
 ```
 
-**Final Status**: Healthcare-devkube CI/CD Pipeline **PRODUCTION READY** 🎉
-     │ Timeline: 2-3 days for complete setup
+### 🎉 **NEW STATUS: 3-TIER ARCHITECTURE + MONITORING READY** ✅
+
+**Architecture Overview:**
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Presentation   │────│  Application    │────│     Data        │
+│     Tier        │    │     Tier        │    │     Tier        │
+│   React App     │    │   Node.js API   │    │   MongoDB       │
+│  (Port 3000)    │    │  (Port 5002)    │    │  (Port 27017)   │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+         └───────────────────────┼───────────────────────┘
+                                 │
+                    ┌─────────────────┐
+                    │   Monitoring    │
+                    │ Prometheus +    │
+                    │    Grafana      │
+                    │ (Ports 9090,    │
+                    │      3001)      │
+                    └─────────────────┘
+```
+
+**Access Points:**
+- 🌐 **Healthcare App**: http://NODE_IP:30080
+- 📊 **Grafana Dashboard**: http://NODE_IP:30081 (admin/grafana123)
+- 📈 **Prometheus Metrics**: Internal cluster access
+- 🗄️ **MongoDB Database**: Internal cluster access
+
+**Final Status**: Healthcare-devkube **3-TIER + MONITORING READY** 🎉

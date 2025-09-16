@@ -16,6 +16,11 @@ spec:
       labels:
         app: healthcare-frontend
         component: frontend
+        tier: frontend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "3000"
+        prometheus.io/path: "/metrics"
     spec:
       containers:
       - name: healthcare-frontend

@@ -11,8 +11,11 @@ data:
   BACKEND_PORT: "5002"
   FRONTEND_PORT: "3000"
 
-  # Database Configuration
-  MONGODB_URI: "mongodb+srv://devops:devops@devops.o4ykiod.mongodb.net/?retryWrites=true&w=majority&appName=devops"
+  # Database Configuration - Local MongoDB (3-tier architecture)
+  MONGODB_URI: "mongodb://admin:mongopassword@healthcare-mongodb-service:27017/healthcare?authSource=admin"
+
+  # Fallback Atlas Database Configuration (for backup/migration)
+  MONGODB_ATLAS_URI: "mongodb+srv://devops:devops@devops.o4ykiod.mongodb.net/?retryWrites=true&w=majority&appName=devops"
 
   # API Configuration
   API_BASE_URL: "http://healthcare-backend-service:5002"
@@ -39,3 +42,7 @@ data:
   # Admin credentials (base64 encoded)
   ADMIN_USERNAME: YWRtaW4=
   ADMIN_PASSWORD: YWRtaW4xMjM=
+  # MongoDB Password (base64 encoded: mongopassword)
+  MONGO_PASSWORD: bW9uZ29wYXNzd29yZA==
+  # Grafana Admin Password (base64 encoded: grafana123)
+  GRAFANA_PASSWORD: Z3JhZmFuYTEyMw==

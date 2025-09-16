@@ -138,17 +138,35 @@ pipeline {
                         # Verify connection
                         kubectl cluster-info --request-timeout=10s
                         
-                        # Deploy application manifests
+                        # Deploy application manifests (3-tier + monitoring)
                         kubectl apply -f k8s/namespace.yaml
                         kubectl apply -f k8s/configmap.yaml
+
+                        # Deploy Database Tier (MongoDB)
+                        kubectl apply -f k8s/database-deployment.yaml
+
+                        # Deploy Monitoring Stack (Prometheus + Grafana)
+                        kubectl apply -f k8s/monitoring-prometheus.yaml
+                        kubectl apply -f k8s/monitoring-grafana.yaml
+
+                        # Deploy Application Tiers
                         kubectl apply -f k8s/backend-deployment.yaml
                         kubectl apply -f k8s/frontend-deployment.yaml
                         
+                        # Wait for database to be ready
+                        echo "Waiting for MongoDB to be ready..."
+                        kubectl rollout status deployment/healthcare-mongodb -n healthcare-app --timeout=300s
+
+                        # Wait for monitoring stack to be ready
+                        echo "Waiting for monitoring stack to be ready..."
+                        kubectl rollout status deployment/prometheus -n healthcare-app --timeout=300s
+                        kubectl rollout status deployment/grafana -n healthcare-app --timeout=300s
+
                         # CRITICAL: Force deployments to restart with new images
                         echo "Forcing deployment restart to pull latest images..."
                         kubectl rollout restart deployment/healthcare-backend -n healthcare-app
                         kubectl rollout restart deployment/healthcare-frontend -n healthcare-app
-                        
+
                         # Wait for rollout to complete with new images
                         echo "Waiting for backend deployment to complete..."
                         kubectl rollout status deployment/healthcare-backend -n healthcare-app --timeout=300s
@@ -180,13 +198,15 @@ pipeline {
                         kubectl get services -n healthcare-app
 
                         # Get external access information
-                        echo "Frontend External Access:"
+                        echo "=== APPLICATION ACCESS INFORMATION ==="
                         NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
-                        NODE_PORT=$(kubectl get service healthcare-frontend-service -n healthcare-app -o jsonpath='{.spec.ports[0].nodePort}')
-                        
-                        echo "Application URL: http://$NODE_IP:$NODE_PORT"
-                        echo "Node IP: $NODE_IP"
-                        echo "Node Port: $NODE_PORT"
+                        FRONTEND_PORT=$(kubectl get service healthcare-frontend-service -n healthcare-app -o jsonpath='{.spec.ports[0].nodePort}')
+                        GRAFANA_PORT=$(kubectl get service grafana-service -n healthcare-app -o jsonpath='{.spec.ports[0].nodePort}')
+
+                        echo "🌐 Frontend Application: http://$NODE_IP:$FRONTEND_PORT"
+                        echo "📊 Grafana Dashboard: http://$NODE_IP:$GRAFANA_PORT (admin/grafana123)"
+                        echo "📈 Prometheus: Internal access at prometheus-service:9090"
+                        echo "🗄️ MongoDB: Internal access at healthcare-mongodb-service:27017"
                         echo ""
                     '''
                 }
@@ -205,20 +225,22 @@ pipeline {
             echo 'Pipeline completed successfully!'
             script {
                 sh '''
-                    echo "==================================="
-                    echo "Deployment Summary:"
-                    echo "==================================="
-                    echo "✅ Backend: healthcare-backend"
-                    echo "✅ Frontend: healthcare-frontend"
-                    echo "✅ Namespace: healthcare-app"
-                    echo "✅ New images deployed and running"
+                    echo "=========================================="
+                    echo "🎉 3-TIER ARCHITECTURE + MONITORING DEPLOYED"
+                    echo "=========================================="
+                    echo "✅ Database Tier: MongoDB (healthcare-mongodb)"
+                    echo "✅ Backend Tier: Node.js API (healthcare-backend)"
+                    echo "✅ Frontend Tier: React App (healthcare-frontend)"
+                    echo "✅ Monitoring: Prometheus + Grafana"
                     echo ""
                     NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
-                    NODE_PORT=$(kubectl get service healthcare-frontend-service -n healthcare-app -o jsonpath='{.spec.ports[0].nodePort}')
-                    echo "🌐 Application URL: http://$NODE_IP:$NODE_PORT"
+                    FRONTEND_PORT=$(kubectl get service healthcare-frontend-service -n healthcare-app -o jsonpath='{.spec.ports[0].nodePort}')
+                    GRAFANA_PORT=$(kubectl get service grafana-service -n healthcare-app -o jsonpath='{.spec.ports[0].nodePort}')
+                    echo "🌐 Healthcare App: http://$NODE_IP:$FRONTEND_PORT"
+                    echo "📊 Grafana Dashboard: http://$NODE_IP:$GRAFANA_PORT"
                     echo ""
-                    echo "Changes from this build are now live!"
-                    echo "==================================="
+                    echo "Complete 3-tier architecture with monitoring is now live!"
+                    echo "=========================================="
                 '''
             }
         }
