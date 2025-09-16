@@ -155,9 +155,9 @@ pipeline {
                                 def frontendImage = "${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-frontend:${BUILD_NUMBER}"
                                 sh """
                                     echo "Building: ${frontendImage}"
-                                    echo "Setting API base URL for Kubernetes environment..."
+                                    echo "Setting API base URL for Ingress environment..."
                                     docker build \\
-                                        --build-arg REACT_APP_API_BASE_URL=http://healthcare-backend-service.healthcare-app.svc.cluster.local:5002 \\
+                                        --build-arg REACT_APP_API_BASE_URL="" \\
                                         -t ${frontendImage} .
                                     docker tag ${frontendImage} ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-frontend:latest
                                     echo "✅ Frontend image built successfully with Kubernetes API URL"
@@ -223,6 +223,7 @@ pipeline {
                         /usr/local/bin/kubectl apply -f k8s/monitoring-grafana.yaml
                         /usr/local/bin/kubectl apply -f k8s/backend-deployment.yaml
                         /usr/local/bin/kubectl apply -f k8s/frontend-deployment.yaml
+                        /usr/local/bin/kubectl apply -f k8s/ingress.yaml
                         
                         echo "Waiting for deployments..."
                         /usr/local/bin/kubectl wait --for=condition=available deployment/healthcare-mongodb -n healthcare-app --timeout=300s || echo "MongoDB timeout - continuing"
@@ -254,21 +255,36 @@ pipeline {
                         # Get deployment status
                         /usr/local/bin/kubectl get pods -n healthcare-app
                         /usr/local/bin/kubectl get services -n healthcare-app
+                        /usr/local/bin/kubectl get ingress -n healthcare-app
 
-                        # Get external access info
-                        NODE_IP=$(/usr/local/bin/kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
-                        if [ -z "$NODE_IP" ]; then
-                            NODE_IP=$(/usr/local/bin/kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
-                            echo "Note: Using internal IP - configure firewall for external access"
+                        # Get ingress external IP
+                        INGRESS_IP=$(/usr/local/bin/kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+
+                        # Fallback to NodePort if ingress not ready
+                        if [ -z "$INGRESS_IP" ] || [ "$INGRESS_IP" = "null" ]; then
+                            NODE_IP=$(/usr/local/bin/kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
+                            if [ -z "$NODE_IP" ]; then
+                                NODE_IP=$(/usr/local/bin/kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
+                            fi
+                            echo ""
+                            echo "🎉 HEALTHCARE APPLICATION DEPLOYED SUCCESSFULLY!"
+                            echo "================================================"
+                            echo "⏳ Ingress LoadBalancer IP is being assigned..."
+                            echo "🌐 Frontend (NodePort): http://$NODE_IP:30080"
+                            echo "📊 Grafana (NodePort): http://$NODE_IP:30081 (admin/grafana123)"
+                            echo "🏥 API Health (NodePort): http://$NODE_IP:30082/health"
+                            echo "================================================"
+                            echo "Note: Once LoadBalancer IP is ready, access via Ingress for CORS-free experience"
+                        else
+                            echo ""
+                            echo "🎉 HEALTHCARE APPLICATION DEPLOYED SUCCESSFULLY!"
+                            echo "================================================"
+                            echo "🌐 Frontend (Ingress): http://$INGRESS_IP/"
+                            echo "🏥 API Health (Ingress): http://$INGRESS_IP/health"
+                            echo "📊 Grafana (NodePort): http://$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}'):30081 (admin/grafana123)"
+                            echo "================================================"
+                            echo "✅ Using Ingress - No CORS issues!"
                         fi
-                        
-                        echo ""
-                        echo "🎉 HEALTHCARE APPLICATION DEPLOYED SUCCESSFULLY!"
-                        echo "================================================"
-                        echo "🌐 Frontend: http://$NODE_IP:30080"
-                        echo "📊 Grafana: http://$NODE_IP:30081 (admin/grafana123)"
-                        echo "🏥 API Health: http://$NODE_IP:30080/api/health"
-                        echo "================================================"
                     '''
                 }
             }

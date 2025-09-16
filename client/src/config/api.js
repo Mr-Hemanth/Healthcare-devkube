@@ -13,6 +13,10 @@ const getApiBaseUrl = () => {
 
   // Check for build-time environment variable
   if (process.env.REACT_APP_API_BASE_URL) {
+    // If empty string, use relative paths (for ingress)
+    if (process.env.REACT_APP_API_BASE_URL === '') {
+      return '';
+    }
     return process.env.REACT_APP_API_BASE_URL;
   }
 
@@ -27,8 +31,9 @@ const getApiBaseUrl = () => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       return 'http://localhost:8080';
     }
-    // Use external access via NodePort - same IP as frontend but different port
-    return `http://${window.location.hostname}:30082`;
+    // For ingress setup, use relative paths (no base URL)
+    // This allows both /api/* and frontend routes to work through the same domain
+    return '';
   }
 
   // Development fallback
