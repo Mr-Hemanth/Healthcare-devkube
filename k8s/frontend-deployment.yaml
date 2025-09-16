@@ -33,6 +33,8 @@ spec:
           value: "production"
         - name: PORT
           value: "3000"
+        - name: REACT_APP_API_BASE_URL
+          value: "http://34.180.18.177:30082"
         envFrom:
         - configMapRef:
             name: healthcare-config
