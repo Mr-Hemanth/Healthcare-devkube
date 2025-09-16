@@ -205,8 +205,9 @@ pipeline {
 
                         echo "🌐 Frontend Application: http://$NODE_IP:$FRONTEND_PORT"
                         echo "📊 Grafana Dashboard: http://$NODE_IP:$GRAFANA_PORT (admin/grafana123)"
-                        echo "📈 Prometheus: Internal access at prometheus-service:9090"
-                        echo "🗄️ MongoDB: Internal access at healthcare-mongodb-service:27017"
+                        echo "📈 Prometheus Metrics: Internal access at prometheus-service:9090"
+                        echo "🗄️ MongoDB Database: Internal access at healthcare-mongodb-service:27017"
+                        echo "🏥 Backend API Health: http://$NODE_IP:$FRONTEND_PORT/api/health"
                         echo ""
                     '''
                 }

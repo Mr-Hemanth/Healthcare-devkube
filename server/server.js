@@ -5,7 +5,7 @@ const bcrypt = require('bcryptjs');
 require('dotenv').config(); // Add this at the top after your requires
 
 const app = express();
-const PORT = 5002; // Port specified directly
+const PORT = process.env.PORT || 5002; // Use environment variable or fallback
 
 // Middleware
 app.use(cors()); // Allow requests from your frontend's IP
@@ -13,15 +13,51 @@ app.use(express.json()); // Parse JSON requests
 
 // Root route
 app.get('/', (req, res) => {
-  res.send('Backend server is running!');
+  res.status(200).json({
+    message: 'Healthcare Backend Server is running!',
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    port: PORT
+  });
 });
 
-// MongoDB connection (direct Atlas URI, no .env file)
-mongoose.connect('mongodb+srv://devops:devops@devops.o4ykiod.mongodb.net/?retryWrites=true&w=majority&appName=devops', {
+// Health check endpoint for Kubernetes probes
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'healthy',
+    uptime: process.uptime(),
+    timestamp: new Date().toISOString(),
+    database: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected'
+  });
+});
+
+// Metrics endpoint for Prometheus
+app.get('/metrics', (req, res) => {
+  const metrics = {
+    uptime_seconds: process.uptime(),
+    memory_usage: process.memoryUsage(),
+    database_status: mongoose.connection.readyState,
+    requests_total: global.requestCount || 0,
+    timestamp: Date.now()
+  };
+  res.status(200).json(metrics);
+});
+
+// Request counter middleware
+app.use((req, res, next) => {
+  global.requestCount = (global.requestCount || 0) + 1;
+  next();
+});
+
+// MongoDB connection - Use environment variable with fallback
+const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGODB_ATLAS_URI || 'mongodb+srv://devops:devops@devops.o4ykiod.mongodb.net/?retryWrites=true&w=majority&appName=devops';
+
+mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true
 })
-  .then(() => console.log('MongoDB connected'))
+  .then(() => console.log(`MongoDB connected to: ${MONGODB_URI.includes('mongodb+srv') ? 'Atlas Cloud' : 'Local Instance'}`))
   .catch(err => console.error('MongoDB connection error:', err));
 
 // Define schemas
@@ -262,7 +298,43 @@ app.post('/api/billings', async (req, res) => {
 });
 
 
+// Enhanced logging middleware
+app.use((req, res, next) => {
+  const timestamp = new Date().toISOString();
+  const method = req.method;
+  const url = req.url;
+  const ip = req.ip || req.connection.remoteAddress;
+
+  console.log(`[${timestamp}] ${method} ${url} - IP: ${ip}`);
+
+  // Log response time
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    const status = res.statusCode;
+    console.log(`[${timestamp}] ${method} ${url} - ${status} - ${duration}ms`);
+  });
+
+  next();
+});
+
 // Start the server
-app.listen(PORT, () => {
-  console.log(`Server is running on http:localhost:${PORT}`); // Use public IP address
+app.listen(PORT, '0.0.0.0', () => {
+  const env = process.env.NODE_ENV || 'development';
+  const dbType = MONGODB_URI.includes('mongodb+srv') ? 'Atlas Cloud' : 'Local MongoDB';
+
+  console.log('====================================');
+  console.log('🏥 Healthcare Backend Server Started');
+  console.log('====================================');
+  console.log(`📡 Server: http://0.0.0.0:${PORT}`);
+  console.log(`🌍 Environment: ${env}`);
+  console.log(`🗄️ Database: ${dbType}`);
+  console.log(`⏰ Started: ${new Date().toISOString()}`);
+  console.log(`🔧 Process ID: ${process.pid}`);
+  console.log(`💾 Memory Usage: ${Math.round(process.memoryUsage().heapUsed / 1024 / 1024)}MB`);
+  console.log('====================================');
+  console.log('📊 Health Check: /health');
+  console.log('📈 Metrics: /metrics');
+  console.log('🔗 API Base: /api');
+  console.log('====================================');
 });

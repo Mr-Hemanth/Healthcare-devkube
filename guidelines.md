@@ -23,7 +23,7 @@ GitHub Commit → Jenkins Tests → Docker Build → Push to Registry → CI/CD 
 
 ### Monitoring Stack
 - **Metrics Collection**: Prometheus (Port 9090) - ClusterIP
-- **Visualization**: Grafana (Port 3001) - NodePort 30081
+- **Visualization**: Grafana (Port 3000) - NodePort 30081
 - **Dashboards**: Healthcare application metrics, system performance
 
 ---
@@ -350,7 +350,7 @@ Registry Push → Kubernetes Deploy → Health Checks → App Live ✅
                     │ Prometheus +    │
                     │    Grafana      │
                     │ (Ports 9090,    │
-                    │      3001)      │
+                    │      3000)      │
                     └─────────────────┘
 ```
 

@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # Development overrides for the main docker-compose.yml
+
+  # Backend with live reload for development
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    environment:
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: true
+    command: ["npm", "run", "dev"]
+
+  # Frontend with live reload for development
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./client:/usr/src/app
+      - /usr/src/app/node_modules
+    environment:
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: true
+      WDS_SOCKET_HOST: localhost
+      WDS_SOCKET_PORT: 3000
+    stdin_open: true
+    tty: true
