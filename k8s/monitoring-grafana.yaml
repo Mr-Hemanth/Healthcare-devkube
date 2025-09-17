@@ -57,9 +57,8 @@ data:
 
   healthcare-dashboard.json: |
     {
-      "dashboard": {
-        "id": null,
-        "title": "Healthcare Application Dashboard",
+      "id": null,
+      "title": "Healthcare Application Dashboard",
         "tags": ["healthcare", "monitoring"],
         "timezone": "browser",
         "panels": [
