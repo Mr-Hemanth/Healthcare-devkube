@@ -19,11 +19,11 @@ Fetching upstream changes from https://github.com/Mr-Hemanth/Healthcare-devkube.
 using GIT_ASKPASS to set credentials GitHub Personal Access Token
  > git fetch --tags --force --progress -- https://github.com/Mr-Hemanth/Healthcare-devkube.git +refs/heads/*:refs/remotes/origin/* # timeout=10
  > git rev-parse refs/remotes/origin/main^{commit} # timeout=10
-Checking out Revision 211253c967308e3c09be34317b88a5e8209d0584 (refs/remotes/origin/main)
+Checking out Revision 2c74f621622ec534189f936a162c20246fed8cf2 (refs/remotes/origin/main)
  > git config core.sparsecheckout # timeout=10
- > git checkout -f 211253c967308e3c09be34317b88a5e8209d0584 # timeout=10
-Commit message: "debugging"
- > git rev-list --no-walk 9bb20b716a97afca9f01d2332779e22681a62a98 # timeout=10
+ > git checkout -f 2c74f621622ec534189f936a162c20246fed8cf2 # timeout=10
+Commit message: "debugging--api fix"
+ > git rev-list --no-walk 211253c967308e3c09be34317b88a5e8209d0584 # timeout=10
 [Pipeline] }
 [Pipeline] // stage
 [Pipeline] withEnv
@@ -50,10 +50,10 @@ Fetching upstream changes from https://github.com/Mr-Hemanth/Healthcare-devkube.
 using GIT_ASKPASS to set credentials GitHub Personal Access Token
  > git fetch --tags --force --progress -- https://github.com/Mr-Hemanth/Healthcare-devkube.git +refs/heads/*:refs/remotes/origin/* # timeout=10
  > git rev-parse refs/remotes/origin/main^{commit} # timeout=10
-Checking out Revision 211253c967308e3c09be34317b88a5e8209d0584 (refs/remotes/origin/main)
+Checking out Revision 2c74f621622ec534189f936a162c20246fed8cf2 (refs/remotes/origin/main)
  > git config core.sparsecheckout # timeout=10
- > git checkout -f 211253c967308e3c09be34317b88a5e8209d0584 # timeout=10
-Commit message: "debugging"
+ > git checkout -f 2c74f621622ec534189f936a162c20246fed8cf2 # timeout=10
+Commit message: "debugging--api fix"
 [Pipeline] }
 [Pipeline] // stage
 [Pipeline] stage
@@ -191,7 +191,7 @@ Testing Frontend Application...
 Installing frontend dependencies...
 + npm install
 
-up to date, audited 1509 packages in 8s
+up to date, audited 1509 packages in 7s
 
 271 packages are looking for funding
   run `npm fund` for details
@@ -235,8 +235,8 @@ Running tests...
       at _run10000 (node_modules/@jest/core/build/cli/index.js:320:7)
       at runCLI (node_modules/@jest/core/build/cli/index.js:173:3)
 
-PASS src/App.test.js (7.983 s)
-  ✓ renders healthcare welcome message (144 ms)
+PASS src/App.test.js
+  ✓ renders healthcare welcome message (128 ms)
 
 ----------------------------|---------|----------|---------|---------|------------------------------------------
 File                        | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s                        
@@ -261,7 +261,7 @@ All files                   |   35.22 |     4.37 |    8.88 |   35.22 |
   UnauthorizedAccess.js     |       0 |      100 |       0 |       0 | 4-5                                      
   Welcome.js                |     100 |      100 |     100 |     100 |                                          
  src/config                 |   26.08 |       15 |   14.28 |   26.08 |                                          
-  api.js                    |   26.08 |       15 |   14.28 |   26.08 | 17-20,25,31-36,67,82-101,108-134,140-141 
+  api.js                    |   26.08 |       15 |   14.28 |   26.08 | 17-20,25,31-37,68,83-102,109-135,141-142 
  src/context                |   62.06 |       50 |      60 |   62.06 |                                          
   AuthContext.js            |   62.06 |       50 |      60 |   62.06 | 8,24-25,31-34,38-41                      
  src/hooks                  |    12.5 |        0 |       0 |    12.5 |                                          
@@ -270,8 +270,11 @@ All files                   |   35.22 |     4.37 |    8.88 |   35.22 |
 Test Suites: 1 passed, 1 total
 Tests:       1 passed, 1 total
 Snapshots:   0 total
-Time:        9.796 s
+Time:        5.489 s, estimated 8 s
 Ran all test suites.
+Jest did not exit one second after the test run has completed.
+
+This usually means that there are asynchronous operations that weren't stopped in your tests. Consider running Jest with `--detectOpenHandles` to troubleshoot this issue.
 [0;33mOne of your dependencies, babel-preset-react-app, is importing the
 "@babel/plugin-proposal-private-property-in-object" package without
 declaring it in its dependencies. This is currently working because
@@ -317,24 +320,23 @@ Building Backend Docker Image...
 [Pipeline] echo
 Building Frontend Docker Image...
 [Pipeline] sh
-+ echo Building: asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend:29
-Building: asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend:29
-+ docker build -t asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend:29 .
++ echo Building: asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend:30
+Building: asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend:30
++ docker build -t asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend:30 .
 DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
             Install the buildx component to build images with BuildKit:
             https://docs.docker.com/go/buildx/
 
-+ echo Building: asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:29
-Building: asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:29
++ echo Building: asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:30
+Building: asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:30
 + echo Setting API base URL for browser access via ingress...
 Setting API base URL for browser access via ingress...
-+ docker build --build-arg REACT_APP_API_BASE_URL= -t asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:29 .
++ docker build --build-arg REACT_APP_API_BASE_URL= -t asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:30 .
 DEPRECATED: The legacy builder is deprecated and will be removed in a future release.
             Install the buildx component to build images with BuildKit:
             https://docs.docker.com/go/buildx/
 
 Sending build context to Docker daemon  1.686MB
-
 Step 1/15 : FROM node:18-alpine
  ---> ee77c6cd7c18
 Step 2/15 : WORKDIR /usr/src/app
@@ -347,19 +349,14 @@ Step 4/15 : RUN npm ci && npm cache clean --force
  ---> Using cache
  ---> 06d2fe61e4f4
 Step 5/15 : COPY . .
- ---> 96b5eedac568
+ ---> 2f9b1a655478
 Step 6/15 : ARG REACT_APP_API_BASE_URL
- ---> Running in da8653772fdf
- ---> Removed intermediate container da8653772fdf
- ---> fc2548b9ab90
+ ---> Running in d4ed31018f13
+ ---> Removed intermediate container d4ed31018f13
+ ---> d355275e78ff
 Step 7/15 : ENV REACT_APP_API_BASE_URL=$REACT_APP_API_BASE_URL
- ---> Running in b1164bf5d100
- ---> Removed intermediate container b1164bf5d100
- ---> 5493c700df61
-Step 8/15 : RUN npm run build
- ---> Running in 41c3ab7614a6
+ ---> Running in cc613e35061b
 Sending build context to Docker daemon  20.92MB
-
 Step 1/10 : FROM node:18-alpine
  ---> ee77c6cd7c18
 Step 2/10 : WORKDIR /app
@@ -378,26 +375,24 @@ Step 6/10 : RUN adduser -S nodejs -u 1001
  ---> Using cache
  ---> 78135c2adf68
 Step 7/10 : COPY --chown=nodejs:nodejs . .
-
-> client@0.1.0 build
-> react-scripts build
-
+ ---> Using cache
  ---> e0b411a631bc
 Step 8/10 : USER nodejs
- ---> Running in 8192a6fdc754
- ---> Removed intermediate container 8192a6fdc754
+ ---> Using cache
  ---> 9f455b2ccf55
 Step 9/10 : EXPOSE 5002
- ---> Running in 1ba7999af1d3
- ---> Removed intermediate container 1ba7999af1d3
+ ---> Using cache
  ---> e83b0fe06148
 Step 10/10 : CMD ["node", "server.js"]
- ---> Running in eaee961e3751
- ---> Removed intermediate container eaee961e3751
+ ---> Using cache
  ---> d95eee354568
+ ---> Removed intermediate container cc613e35061b
+ ---> 05eeba96bace
+Step 8/15 : RUN npm run build
 Successfully built d95eee354568
-Successfully tagged asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend:29
-+ docker tag asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend:29 asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend:latest
+Successfully tagged asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend:30
+ ---> Running in 0251f6ce1d7b
++ docker tag asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend:30 asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend:latest
 + echo ✅ Backend image built successfully
 ✅ Backend image built successfully
 [Pipeline] }
@@ -407,6 +402,10 @@ Successfully tagged asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/h
 [Pipeline] }
 [Pipeline] // stage
 [Pipeline] }
+
+> client@0.1.0 build
+> react-scripts build
+
 Creating an optimized production build...
 [91mBrowserslist: browsers data (caniuse-lite) is 11 months old. Please run:
   npx update-browserslist-db@latest
@@ -430,14 +429,14 @@ go away.[0m
 
 [eslint] 
 src/config/api.js
-  Line 144:1:  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
+  Line 145:1:  Assign object to a variable before exporting as module default  import/no-anonymous-default-export
 
 Search for the keywords to learn more about each warning.
 To ignore, add // eslint-disable-next-line to the line before.
 
 File sizes after gzip:
 
-  135.11 kB  build/static/js/main.f72b11aa.js
+  135.12 kB  build/static/js/main.2646d3ea.js
   1.09 kB    build/static/css/main.3ebbdcc8.css
 
 The project was built assuming it is hosted at /.
@@ -453,44 +452,44 @@ Find out more about deployment here:
 
   https://cra.link/deployment
 
- ---> Removed intermediate container 41c3ab7614a6
- ---> 97da2e82636a
+ ---> Removed intermediate container 0251f6ce1d7b
+ ---> 8eefd01eb65b
 Step 9/15 : RUN npm install -g serve
- ---> Running in 5d9aba4c0d52
+ ---> Running in e4acce784efa
 
-added 86 packages in 10s
+added 86 packages in 7s
 
 25 packages are looking for funding
   run `npm fund` for details
- ---> Removed intermediate container 5d9aba4c0d52
- ---> cf23ba3174c4
+ ---> Removed intermediate container e4acce784efa
+ ---> f78700d6ad8c
 Step 10/15 : RUN addgroup -g 1001 -S nodejs
- ---> Running in a60bd140932f
- ---> Removed intermediate container a60bd140932f
- ---> 4d56da419dfd
+ ---> Running in bdcc9f402796
+ ---> Removed intermediate container bdcc9f402796
+ ---> c8cd207c119c
 Step 11/15 : RUN adduser -S nextjs -u 1001
- ---> Running in 38169cb94fdb
- ---> Removed intermediate container 38169cb94fdb
- ---> 9cf2173190cd
+ ---> Running in aaa09c83084b
+ ---> Removed intermediate container aaa09c83084b
+ ---> eaa8b35df427
 Step 12/15 : RUN chown -R nextjs:nodejs /usr/src/app/build
- ---> Running in 7f32c9000716
- ---> Removed intermediate container 7f32c9000716
- ---> 9c6d961106be
+ ---> Running in 7f88beb5e1a7
+ ---> Removed intermediate container 7f88beb5e1a7
+ ---> 21c8385c641d
 Step 13/15 : USER nextjs
- ---> Running in 2d2afd5e381b
- ---> Removed intermediate container 2d2afd5e381b
- ---> 05ca85eaf8cb
+ ---> Running in b157aca77187
+ ---> Removed intermediate container b157aca77187
+ ---> 4e7db784d292
 Step 14/15 : EXPOSE 3000
- ---> Running in 85ef85b39e0b
- ---> Removed intermediate container 85ef85b39e0b
- ---> 8a8ac686b377
+ ---> Running in 7b3eee2403b9
+ ---> Removed intermediate container 7b3eee2403b9
+ ---> 27b7b5c05033
 Step 15/15 : CMD ["serve", "-s", "build", "-l", "3000"]
- ---> Running in 941015e7e687
- ---> Removed intermediate container 941015e7e687
- ---> 48303ca4c1bf
-Successfully built 48303ca4c1bf
-Successfully tagged asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:29
-+ docker tag asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:29 asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:latest
+ ---> Running in 437e6c1e42e6
+ ---> Removed intermediate container 437e6c1e42e6
+ ---> c4614f53602d
+Successfully built c4614f53602d
+Successfully tagged asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:30
++ docker tag asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:30 asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:latest
 + echo ✅ Frontend image built successfully with Kubernetes API URL
 ✅ Frontend image built successfully with Kubernetes API URL
 [Pipeline] }
@@ -522,8 +521,8 @@ Pushing Backend Images...
 [Pipeline] echo
 Pushing Frontend Images...
 [Pipeline] sh
-+ docker push asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend:29
-+ docker push asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:29
++ docker push asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend:30
++ docker push asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:30
 The push refers to repository [asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend]
 970107fb863f: Preparing
 66ef3b520668: Preparing
@@ -535,99 +534,65 @@ b34c57d81995: Preparing
 f3b40b0cdb1c: Preparing
 0b1f26057bd0: Preparing
 08000c18d16d: Preparing
+970107fb863f: Waiting
+66ef3b520668: Waiting
+fc57048cf79c: Waiting
+1d8dfb065721: Waiting
+698bcc6679dc: Waiting
+b34c57d81995: Waiting
 82140d9a70a7: Waiting
 f3b40b0cdb1c: Waiting
 0b1f26057bd0: Waiting
 08000c18d16d: Waiting
-b34c57d81995: Waiting
+The push refers to repository [asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend]
+193e8fe50d93: Preparing
+ad7a224b7bbd: Preparing
+dcad47398764: Preparing
+9a8af116b56a: Preparing
+6e6178c4bc39: Preparing
+04843cfe684f: Preparing
+835be13f7842: Preparing
+3ba7933f0c87: Preparing
+b24b8265f24c: Preparing
+82140d9a70a7: Preparing
+f3b40b0cdb1c: Preparing
+0b1f26057bd0: Preparing
+08000c18d16d: Preparing
+835be13f7842: Waiting
+3ba7933f0c87: Waiting
+b24b8265f24c: Waiting
+82140d9a70a7: Waiting
+f3b40b0cdb1c: Waiting
+0b1f26057bd0: Waiting
+08000c18d16d: Waiting
+04843cfe684f: Waiting
+dcad47398764: Pushed
+193e8fe50d93: Pushed
+ad7a224b7bbd: Pushed
+3ba7933f0c87: Layer already exists
+835be13f7842: Layer already exists
+b24b8265f24c: Layer already exists
+82140d9a70a7: Layer already exists
+f3b40b0cdb1c: Layer already exists
+970107fb863f: Layer already exists
+66ef3b520668: Layer already exists
+fc57048cf79c: Layer already exists
 698bcc6679dc: Layer already exists
 1d8dfb065721: Layer already exists
-fc57048cf79c: Layer already exists
 b34c57d81995: Layer already exists
-66ef3b520668: Layer already exists
 82140d9a70a7: Layer already exists
 f3b40b0cdb1c: Layer already exists
 08000c18d16d: Layer already exists
+04843cfe684f: Pushed
 0b1f26057bd0: Layer already exists
-The push refers to repository [asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend]
-4e4d6baa5d9a: Preparing
-7d8c66121c31: Preparing
-d6d2394f1eef: Preparing
-334d91ae0f92: Preparing
-fa92f06ba2b1: Preparing
-82daef51df9b: Preparing
-835be13f7842: Preparing
-3ba7933f0c87: Preparing
-b24b8265f24c: Preparing
-82140d9a70a7: Preparing
-f3b40b0cdb1c: Preparing
-0b1f26057bd0: Preparing
-08000c18d16d: Preparing
-7d8c66121c31: Waiting
-d6d2394f1eef: Waiting
-334d91ae0f92: Waiting
-fa92f06ba2b1: Waiting
-82daef51df9b: Waiting
-835be13f7842: Waiting
-3ba7933f0c87: Waiting
-b24b8265f24c: Waiting
-82140d9a70a7: Waiting
-f3b40b0cdb1c: Waiting
-0b1f26057bd0: Waiting
-08000c18d16d: Waiting
-d6d2394f1eef: Pushed
-7d8c66121c31: Pushed
-4e4d6baa5d9a: Pushed
-835be13f7842: Layer already exists
-3ba7933f0c87: Layer already exists
-b24b8265f24c: Layer already exists
-82daef51df9b: Pushed
-82140d9a70a7: Layer already exists
-f3b40b0cdb1c: Layer already exists
+6e6178c4bc39: Pushed
 0b1f26057bd0: Layer already exists
 08000c18d16d: Layer already exists
-334d91ae0f92: Pushed
-970107fb863f: Pushed
-fa92f06ba2b1: Pushed
-29: digest: sha256:50e13430247b2ec68c8612a2eb7d9355a5d7e3c56e83ff0866c47ee072b2f242 size: 3043
-+ docker push asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:latest
-29: digest: sha256:388649dd736c29dec8a270df1dc121d02cc09833e70e2e307670f5a2da045e5d size: 2409
+30: digest: sha256:388649dd736c29dec8a270df1dc121d02cc09833e70e2e307670f5a2da045e5d size: 2409
 + docker push asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend:latest
-The push refers to repository [asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend]
-4e4d6baa5d9a: Preparing
-7d8c66121c31: Preparing
-d6d2394f1eef: Preparing
-334d91ae0f92: Preparing
-fa92f06ba2b1: Preparing
-82daef51df9b: Preparing
-835be13f7842: Preparing
-82daef51df9b: Waiting
-3ba7933f0c87: Preparing
-835be13f7842: Waiting
-b24b8265f24c: Preparing
-82140d9a70a7: Preparing
-f3b40b0cdb1c: Preparing
-3ba7933f0c87: Waiting
-b24b8265f24c: Waiting
-82140d9a70a7: Waiting
-0b1f26057bd0: Preparing
-08000c18d16d: Preparing
-f3b40b0cdb1c: Waiting
-0b1f26057bd0: Waiting
-08000c18d16d: Waiting
-4e4d6baa5d9a: Layer already exists
-d6d2394f1eef: Layer already exists
-334d91ae0f92: Layer already exists
-fa92f06ba2b1: Layer already exists
-7d8c66121c31: Layer already exists
-835be13f7842: Layer already exists
-82daef51df9b: Layer already exists
-b24b8265f24c: Layer already exists
-82140d9a70a7: Layer already exists
-3ba7933f0c87: Layer already exists
-f3b40b0cdb1c: Layer already exists
-0b1f26057bd0: Layer already exists
-08000c18d16d: Layer already exists
+9a8af116b56a: Pushed
+30: digest: sha256:2ab1b27ddccf143bde0f94da3d209370bad9447541581ff86c7044fcae990925 size: 3043
++ docker push asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:latest
 The push refers to repository [asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend]
 970107fb863f: Preparing
 66ef3b520668: Preparing
@@ -639,38 +604,68 @@ b34c57d81995: Preparing
 f3b40b0cdb1c: Preparing
 0b1f26057bd0: Preparing
 08000c18d16d: Preparing
-fc57048cf79c: Waiting
-698bcc6679dc: Waiting
-1d8dfb065721: Waiting
 b34c57d81995: Waiting
 82140d9a70a7: Waiting
-f3b40b0cdb1c: Waiting
 0b1f26057bd0: Waiting
 08000c18d16d: Waiting
-970107fb863f: Waiting
+fc57048cf79c: Layer already exists
+698bcc6679dc: Layer already exists
 1d8dfb065721: Layer already exists
 66ef3b520668: Layer already exists
 970107fb863f: Layer already exists
-fc57048cf79c: Layer already exists
-698bcc6679dc: Layer already exists
-b34c57d81995: Layer already exists
-82140d9a70a7: Layer already exists
 f3b40b0cdb1c: Layer already exists
+82140d9a70a7: Layer already exists
+b34c57d81995: Layer already exists
 0b1f26057bd0: Layer already exists
 08000c18d16d: Layer already exists
-latest: digest: sha256:50e13430247b2ec68c8612a2eb7d9355a5d7e3c56e83ff0866c47ee072b2f242 size: 3043
-+ echo ✅ Frontend images pushed
-✅ Frontend images pushed
 latest: digest: sha256:388649dd736c29dec8a270df1dc121d02cc09833e70e2e307670f5a2da045e5d size: 2409
 + echo ✅ Backend images pushed
 ✅ Backend images pushed
+The push refers to repository [asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend]
+193e8fe50d93: Preparing
+ad7a224b7bbd: Preparing
+dcad47398764: Preparing
+9a8af116b56a: Preparing
+6e6178c4bc39: Preparing
+04843cfe684f: Preparing
+835be13f7842: Preparing
+3ba7933f0c87: Preparing
+b24b8265f24c: Preparing
+82140d9a70a7: Preparing
+f3b40b0cdb1c: Preparing
+0b1f26057bd0: Preparing
+08000c18d16d: Preparing
+04843cfe684f: Waiting
+835be13f7842: Waiting
+3ba7933f0c87: Waiting
+b24b8265f24c: Waiting
+82140d9a70a7: Waiting
+08000c18d16d: Waiting
+f3b40b0cdb1c: Waiting
+0b1f26057bd0: Waiting
+ad7a224b7bbd: Layer already exists
+dcad47398764: Layer already exists
+9a8af116b56a: Layer already exists
+6e6178c4bc39: Layer already exists
+193e8fe50d93: Layer already exists
+04843cfe684f: Layer already exists
+835be13f7842: Layer already exists
+82140d9a70a7: Layer already exists
+b24b8265f24c: Layer already exists
+3ba7933f0c87: Layer already exists
+f3b40b0cdb1c: Layer already exists
+0b1f26057bd0: Layer already exists
+08000c18d16d: Layer already exists
 [Pipeline] }
 [Pipeline] // script
-[Pipeline] }
 [Pipeline] }
 [Pipeline] // stage
-[Pipeline] // script
 [Pipeline] }
+latest: digest: sha256:2ab1b27ddccf143bde0f94da3d209370bad9447541581ff86c7044fcae990925 size: 3043
++ echo ✅ Frontend images pushed
+✅ Frontend images pushed
+[Pipeline] }
+[Pipeline] // script
 [Pipeline] }
 [Pipeline] // stage
 [Pipeline] }
@@ -767,31 +762,31 @@ deployment.apps/healthcare-frontend condition met
 + echo ✅ Deployment completed!
 ✅ Deployment completed!
 + /usr/local/bin/kubectl get all -n healthcare-app
-NAME                                      READY   STATUS             RESTARTS        AGE
-pod/grafana-7d8687f94b-bkq58              1/1     Running            0               16h
-pod/healthcare-backend-6cd8576769-f4rdq   0/1     Pending            0               0s
-pod/healthcare-backend-8454b97fcb-dcdsh   1/1     Running            0               13m
-pod/healthcare-backend-8454b97fcb-z6jbj   1/1     Running            0               16m
-pod/healthcare-frontend-cb886c555-c67sl   1/1     Running            0               16m
-pod/healthcare-frontend-cb886c555-jb4mk   1/1     Running            0               13m
-pod/healthcare-frontend-fc988ff98-n7lb5   0/1     Pending            0               0s
-pod/healthcare-mongodb-7dbb88f5b-thr5l    1/1     Running            0               13h
-pod/prometheus-6ddcd97d89-h9qwh           0/1     CrashLoopBackOff   76 (116s ago)   6h5m
-pod/prometheus-7bbfb5596c-9wzzr           1/1     Running            0               17h
+NAME                                      READY   STATUS              RESTARTS         AGE
+pod/grafana-7d8687f94b-bkq58              1/1     Running             0                16h
+pod/healthcare-backend-6cd8576769-ck67c   1/1     Running             0                8m8s
+pod/healthcare-backend-6cd8576769-f4rdq   1/1     Running             0                8m25s
+pod/healthcare-backend-847cb5f8c4-v2gww   0/1     ContainerCreating   0                2s
+pod/healthcare-frontend-6777b964-dchss    0/1     Pending             0                1s
+pod/healthcare-frontend-fc988ff98-bpc6q   1/1     Running             0                7m59s
+pod/healthcare-frontend-fc988ff98-n7lb5   1/1     Running             0                8m25s
+pod/healthcare-mongodb-7dbb88f5b-thr5l    1/1     Running             0                13h
+pod/prometheus-6ddcd97d89-h9qwh           0/1     CrashLoopBackOff    77 (5m15s ago)   6h13m
+pod/prometheus-7bbfb5596c-9wzzr           1/1     Running             0                17h
 
 NAME                                  TYPE           CLUSTER-IP       EXTERNAL-IP    PORT(S)          AGE
 service/grafana-service               NodePort       34.118.226.7     <none>         3000:30081/TCP   17h
 service/healthcare-backend-service    ClusterIP      34.118.231.138   <none>         5002/TCP         17h
 service/healthcare-frontend-service   LoadBalancer   34.118.228.162   34.100.185.1   80:30836/TCP     17h
-service/healthcare-mongodb-service    ClusterIP      34.118.236.5     <none>         27017/TCP        17h
-service/prometheus-service            ClusterIP      34.118.232.126   <none>         9090/TCP         17h
+service/healthcare-mongodb-service    ClusterIP      34.118.236.5     <none>         27017/TCP        18h
+service/prometheus-service            ClusterIP      34.118.232.126   <none>         9090/TCP         18h
 
 NAME                                  READY   UP-TO-DATE   AVAILABLE   AGE
 deployment.apps/grafana               1/1     1            1           17h
 deployment.apps/healthcare-backend    2/2     1            2           17h
 deployment.apps/healthcare-frontend   2/2     1            2           17h
-deployment.apps/healthcare-mongodb    1/1     1            1           17h
-deployment.apps/prometheus            1/1     1            1           17h
+deployment.apps/healthcare-mongodb    1/1     1            1           18h
+deployment.apps/prometheus            1/1     1            1           18h
 
 NAME                                             DESIRED   CURRENT   READY   AGE
 replicaset.apps/grafana-58475648cd               0         0         0       17h
@@ -799,32 +794,32 @@ replicaset.apps/grafana-7d8687f94b               1         1         1       16h
 replicaset.apps/healthcare-backend-54f857c94     0         0         0       10h
 replicaset.apps/healthcare-backend-58b687958d    0         0         0       10h
 replicaset.apps/healthcare-backend-5bfc8b8cbc    0         0         0       10h
-replicaset.apps/healthcare-backend-5dd44b476c    0         0         0       11h
 replicaset.apps/healthcare-backend-5f475c7645    0         0         0       10h
 replicaset.apps/healthcare-backend-669fc45b84    0         0         0       10h
-replicaset.apps/healthcare-backend-68c6c4d6df    0         0         0       109m
-replicaset.apps/healthcare-backend-6c697d8f5d    0         0         0       119m
-replicaset.apps/healthcare-backend-6cd8576769    1         1         0       1s
-replicaset.apps/healthcare-backend-7f54f89c96    0         0         0       9h
-replicaset.apps/healthcare-backend-8454b97fcb    2         2         2       16m
-replicaset.apps/healthcare-backend-84cb878467    0         0         0       127m
-replicaset.apps/healthcare-frontend-56944b4d78   0         0         0       10h
+replicaset.apps/healthcare-backend-68c6c4d6df    0         0         0       117m
+replicaset.apps/healthcare-backend-6c697d8f5d    0         0         0       127m
+replicaset.apps/healthcare-backend-6cd8576769    2         2         2       8m25s
+replicaset.apps/healthcare-backend-7f54f89c96    0         0         0       10h
+replicaset.apps/healthcare-backend-8454b97fcb    0         0         0       25m
+replicaset.apps/healthcare-backend-847cb5f8c4    1         1         0       2s
+replicaset.apps/healthcare-backend-84cb878467    0         0         0       135m
 replicaset.apps/healthcare-frontend-56c8d678b8   0         0         0       10h
 replicaset.apps/healthcare-frontend-5dcfd8d8db   0         0         0       10h
 replicaset.apps/healthcare-frontend-5fc78f64f7   0         0         0       10h
-replicaset.apps/healthcare-frontend-654d97f9db   0         0         0       127m
+replicaset.apps/healthcare-frontend-654d97f9db   0         0         0       135m
 replicaset.apps/healthcare-frontend-6569695659   0         0         0       10h
-replicaset.apps/healthcare-frontend-76775dc848   0         0         0       9h
-replicaset.apps/healthcare-frontend-88d8758      0         0         0       119m
-replicaset.apps/healthcare-frontend-94b475476    0         0         0       109m
-replicaset.apps/healthcare-frontend-cb886c555    2         2         2       16m
-replicaset.apps/healthcare-frontend-d568fdf6b    0         0         0       127m
-replicaset.apps/healthcare-frontend-fc988ff98    1         1         0       1s
-replicaset.apps/healthcare-mongodb-5767d8bc5     0         0         0       17h
+replicaset.apps/healthcare-frontend-6777b964     1         1         0       1s
+replicaset.apps/healthcare-frontend-76775dc848   0         0         0       10h
+replicaset.apps/healthcare-frontend-88d8758      0         0         0       127m
+replicaset.apps/healthcare-frontend-94b475476    0         0         0       117m
+replicaset.apps/healthcare-frontend-cb886c555    0         0         0       25m
+replicaset.apps/healthcare-frontend-d568fdf6b    0         0         0       135m
+replicaset.apps/healthcare-frontend-fc988ff98    2         2         2       8m25s
+replicaset.apps/healthcare-mongodb-5767d8bc5     0         0         0       18h
 replicaset.apps/healthcare-mongodb-79f785c8c8    0         0         0       17h
 replicaset.apps/healthcare-mongodb-7dbb88f5b     1         1         1       14h
 replicaset.apps/prometheus-6ddcd97d89            1         1         0       17h
-replicaset.apps/prometheus-7bbfb5596c            1         1         1       17h
+replicaset.apps/prometheus-7bbfb5596c            1         1         1       18h
 replicaset.apps/prometheus-b8ffb5f48             0         0         0       17h
 [Pipeline] }
 [Pipeline] // script
@@ -840,24 +835,24 @@ Performing final health checks...
 + echo === APPLICATION ACCESS INFORMATION ===
 === APPLICATION ACCESS INFORMATION ===
 + /usr/local/bin/kubectl get pods -n healthcare-app
-NAME                                  READY   STATUS             RESTARTS        AGE
-grafana-7d8687f94b-bkq58              1/1     Running            0               16h
-healthcare-backend-6cd8576769-f4rdq   0/1     Pending            0               1s
-healthcare-backend-8454b97fcb-dcdsh   1/1     Running            0               13m
-healthcare-backend-8454b97fcb-z6jbj   1/1     Running            0               16m
-healthcare-frontend-cb886c555-c67sl   1/1     Running            0               16m
-healthcare-frontend-cb886c555-jb4mk   1/1     Running            0               13m
-healthcare-frontend-fc988ff98-n7lb5   0/1     Pending            0               1s
-healthcare-mongodb-7dbb88f5b-thr5l    1/1     Running            0               13h
-prometheus-6ddcd97d89-h9qwh           0/1     CrashLoopBackOff   76 (117s ago)   6h5m
-prometheus-7bbfb5596c-9wzzr           1/1     Running            0               17h
+NAME                                  READY   STATUS              RESTARTS      AGE
+grafana-7d8687f94b-bkq58              1/1     Running             0             16h
+healthcare-backend-6cd8576769-ck67c   1/1     Running             0             8m9s
+healthcare-backend-6cd8576769-f4rdq   1/1     Running             0             8m26s
+healthcare-backend-847cb5f8c4-v2gww   0/1     Running             0             3s
+healthcare-frontend-6777b964-dchss    0/1     ContainerCreating   0             2s
+healthcare-frontend-fc988ff98-bpc6q   1/1     Running             0             8m
+healthcare-frontend-fc988ff98-n7lb5   1/1     Running             0             8m26s
+healthcare-mongodb-7dbb88f5b-thr5l    1/1     Running             0             13h
+prometheus-6ddcd97d89-h9qwh           0/1     CrashLoopBackOff    78 (2s ago)   6h13m
+prometheus-7bbfb5596c-9wzzr           1/1     Running             0             17h
 + /usr/local/bin/kubectl get services -n healthcare-app
 NAME                          TYPE           CLUSTER-IP       EXTERNAL-IP    PORT(S)          AGE
 grafana-service               NodePort       34.118.226.7     <none>         3000:30081/TCP   17h
 healthcare-backend-service    ClusterIP      34.118.231.138   <none>         5002/TCP         17h
 healthcare-frontend-service   LoadBalancer   34.118.228.162   34.100.185.1   80:30836/TCP     17h
-healthcare-mongodb-service    ClusterIP      34.118.236.5     <none>         27017/TCP        17h
-prometheus-service            ClusterIP      34.118.232.126   <none>         9090/TCP         17h
+healthcare-mongodb-service    ClusterIP      34.118.236.5     <none>         27017/TCP        18h
+prometheus-service            ClusterIP      34.118.232.126   <none>         9090/TCP         18h
 + /usr/local/bin/kubectl get ingress -n healthcare-app
 NAME                 CLASS    HOSTS   ADDRESS         PORTS   AGE
 healthcare-ingress   <none>   *       34.93.179.126   80      10h
