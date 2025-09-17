@@ -135,7 +135,6 @@ mongoose.connection.on('connected', () => {
   logger.info('🟢 MongoDB connected event triggered');
 });
 
-
 mongoose.connection.on('error', (err) => {
   logger.error('🔴 MongoDB connection error event:', err.message);
 });
