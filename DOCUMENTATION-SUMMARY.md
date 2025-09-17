@@ -47,6 +47,7 @@ This project contains comprehensive documentation covering all aspects of the He
 
 ---
 
+
 ## 🏗️ **ARCHITECTURE OVERVIEW**
 
 ### **3-Tier Architecture:**
