@@ -11,6 +11,7 @@ const PORT = process.env.PORT || 5002; // Use environment variable or fallback
 const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
 const DATABASE_TYPE = process.env.DATABASE_TYPE || 'atlas';
 
+
 // Comprehensive Logger
 const logger = {
   info: (...args) => {
