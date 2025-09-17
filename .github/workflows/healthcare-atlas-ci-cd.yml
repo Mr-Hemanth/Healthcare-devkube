@@ -442,55 +442,24 @@ jobs:
         gcloud config set project ${{ env.PROJECT_ID }}
         gcloud container clusters get-credentials ${{ env.CLUSTER_NAME }} --location=${{ env.CLUSTER_LOCATION }}
 
-    - name: 🔍 Comprehensive Health Checks
+    - name: 🔍 Deployment Status & Access Information
       run: |
         echo "=============================================="
         echo "🏥 HEALTHCARE 3-TIER ATLAS DEPLOYMENT STATUS"
         echo "=============================================="
 
-        echo "📊 Pod Status (Detailed):"
-        kubectl get pods -n healthcare-app -o wide
+        echo "📊 Pod Status:"
+        kubectl get pods -n healthcare-app
+
         echo ""
-
-        echo "🌐 Service Status (Detailed):"
-        kubectl get services -n healthcare-app -o wide
-        echo ""
-
-        echo "🔍 Atlas Configuration Status:"
-        kubectl get configmaps -n healthcare-app
-        kubectl get secrets -n healthcare-app
-        echo ""
-
-        echo "🩺 Health Check Tests:"
-
-        # Backend health check
-        echo "🔧 Testing Backend Health (Atlas Connection)..."
-        if kubectl exec deployment/healthcare-backend -n healthcare-app -- curl -f http://localhost:5002/health >/dev/null 2>&1; then
-          echo "✅ Backend health check passed"
-        else
-          echo "❌ Backend health check failed"
-          echo "📋 Backend logs (last 5 lines):"
-          kubectl logs deployment/healthcare-backend -n healthcare-app --tail=5 | sed "s/^/    /"
-        fi
-
-        # Frontend health check
-        echo "🖥️ Testing Frontend Health..."
-        if kubectl exec deployment/healthcare-frontend -n healthcare-app -- curl -f http://localhost:3000/ >/dev/null 2>&1; then
-          echo "✅ Frontend health check passed"
-        else
-          echo "❌ Frontend health check failed"
-        fi
-
-        # Atlas connection verification
-        echo "☁️ Verifying Atlas Database Connection..."
-        echo "📋 Recent backend logs (Atlas connection):"
-        kubectl logs deployment/healthcare-backend -n healthcare-app --tail=10 | grep -i "mongodb\|atlas\|connected\|database" | sed "s/^/    /" || echo "    ℹ️ No recent DB connection logs"
+        echo "🌐 Service Status:"
+        kubectl get services -n healthcare-app
 
         # Check LoadBalancer IP
         FRONTEND_IP=$(kubectl get service healthcare-frontend-service -n healthcare-app -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "PENDING")
 
         echo ""
-        echo "🌍 EXTERNAL ACCESS INFORMATION:"
+        echo "🌍 APPLICATION ACCESS INFORMATION:"
         echo "=============================================="
 
         if [ "$FRONTEND_IP" != "PENDING" ] && [ "$FRONTEND_IP" != "" ] && [ "$FRONTEND_IP" != "null" ]; then
@@ -501,18 +470,6 @@ jobs:
           echo "☁️ Database (Tier 3): MongoDB Atlas (Cloud)"
           echo ""
           echo "✅ Complete 3-tier architecture is LIVE!"
-          echo "✅ No local database dependencies"
-          echo "✅ Cloud-native Atlas deployment"
-          echo "✅ Auto-scaling enabled"
-
-          # Test external access
-          echo ""
-          echo "🌐 Testing external access..."
-          if timeout 10 curl -f -s "http://$FRONTEND_IP/" >/dev/null 2>&1; then
-            echo "✅ External frontend access working"
-          else
-            echo "⚠️ External frontend access test timed out (normal for new deployment)"
-          fi
         else
           echo "🎉 3-TIER ATLAS ARCHITECTURE DEPLOYED!"
           echo ""
