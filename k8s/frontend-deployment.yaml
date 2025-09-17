@@ -25,7 +25,7 @@ spec:
       containers:
       - name: healthcare-frontend
         image: asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:latest
-        imagePullPolicy: Never
+        imagePullPolicy: Always
         ports:
         - containerPort: 3000
           protocol: TCP
@@ -35,7 +35,7 @@ spec:
         - name: PORT
           value: "3000"
         - name: REACT_APP_API_BASE_URL
-          value: "http://34.180.18.177:30082"
+          value: "http://healthcare-backend-service:5002"
         envFrom:
         - configMapRef:
             name: healthcare-config
@@ -67,11 +67,11 @@ metadata:
   labels:
     app: healthcare-frontend
 spec:
-  type: NodePort
+  type: LoadBalancer
   ports:
-  - port: 3000
+  - port: 80
     targetPort: 3000
-    nodePort: 30080
     protocol: TCP
+    name: http
   selector:
     app: healthcare-frontend

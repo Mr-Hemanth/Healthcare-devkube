@@ -1,0 +1,254 @@
+pipeline {
+    agent any
+
+    environment {
+        PROJECT_ID = 'hc-3-monitoring'
+        CLUSTER_NAME = 'healthcare3-cluster'
+        CLUSTER_LOCATION = 'asia-south1'
+        REGISTRY_HOSTNAME = 'asia-south1-docker.pkg.dev'
+        REPOSITORY_NAME = 'healthcare-repo'
+        SERVICE_ACCOUNT_KEY = credentials('gcp-service-account-key')
+        USE_GKE_GCLOUD_AUTH_PLUGIN = 'True'
+        PATH = "/usr/local/bin:/snap/bin:/usr/sbin:/usr/bin:/sbin:/bin:$PATH"
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out source code...'
+                checkout scm
+            }
+        }
+
+        stage('Verify Prerequisites') {
+            steps {
+                script {
+                    echo 'Verifying all required tools are properly installed...'
+                    sh '''
+                        echo "=== Environment Verification ==="
+                        echo "Current user: $(whoami)"
+                        echo "Working directory: $(pwd)"
+
+                        echo "=== Tool Verification ==="
+                        echo "Node.js: $(node --version)"
+                        echo "npm: $(npm --version)"
+                        echo "Docker: $(docker --version)"
+                        echo "gcloud: $(/usr/local/bin/gcloud --version | head -1)"
+                        echo "kubectl: $(/usr/local/bin/kubectl version --client | head -1)"
+                        echo "✅ All prerequisites verified successfully!"
+                    '''
+                }
+            }
+        }
+
+        stage('Setup GCP Authentication') {
+            steps {
+                script {
+                    echo 'Setting up GCP authentication...'
+                    sh '''
+                        export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+                        /usr/local/bin/gcloud auth activate-service-account --key-file=${SERVICE_ACCOUNT_KEY}
+                        /usr/local/bin/gcloud config set project ${PROJECT_ID}
+                        /usr/local/bin/gcloud auth configure-docker ${REGISTRY_HOSTNAME} --quiet
+                        echo "✅ GCP authentication setup complete"
+                    '''
+                }
+            }
+        }
+
+        stage('Test Applications') {
+            parallel {
+                stage('Test Backend') {
+                    steps {
+                        dir('server') {
+                            script {
+                                echo 'Testing Backend Application...'
+                                sh '''
+                                    npm install
+                                    node -c server.js
+                                    echo "✅ Backend tests passed"
+                                '''
+                            }
+                        }
+                    }
+                }
+                stage('Test Frontend') {
+                    steps {
+                        dir('client') {
+                            script {
+                                echo 'Testing Frontend Application...'
+                                sh '''
+                                    npm install
+                                    CI=true npm test -- --coverage --watchAll=false
+                                    echo "✅ Frontend tests passed"
+                                '''
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Build Docker Images') {
+            parallel {
+                stage('Build Backend Image') {
+                    steps {
+                        dir('server') {
+                            script {
+                                echo 'Building Backend Docker Image...'
+                                def backendImage = "${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-backend:${BUILD_NUMBER}"
+                                sh """
+                                    docker build -t ${backendImage} .
+                                    docker tag ${backendImage} ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-backend:latest
+                                    echo "✅ Backend image built successfully"
+                                """
+                            }
+                        }
+                    }
+                }
+                stage('Build Frontend Image') {
+                    steps {
+                        dir('client') {
+                            script {
+                                echo 'Building Frontend Docker Image...'
+                                def frontendImage = "${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-frontend:${BUILD_NUMBER}"
+                                sh """
+                                    echo "Building with Atlas backend service URL..."
+                                    docker build \\
+                                        --build-arg REACT_APP_API_BASE_URL="http://healthcare-backend-service-atlas:5002" \\
+                                        -t ${frontendImage} .
+                                    docker tag ${frontendImage} ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-frontend:latest
+                                    echo "✅ Frontend image built with Atlas service names"
+                                """
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Push Images to Artifact Registry') {
+            parallel {
+                stage('Push Backend Image') {
+                    steps {
+                        script {
+                            echo 'Pushing Backend Images...'
+                            sh """
+                                docker push ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-backend:${BUILD_NUMBER}
+                                docker push ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-backend:latest
+                                echo "✅ Backend images pushed"
+                            """
+                        }
+                    }
+                }
+                stage('Push Frontend Image') {
+                    steps {
+                        script {
+                            echo 'Pushing Frontend Images...'
+                            sh """
+                                docker push ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-frontend:${BUILD_NUMBER}
+                                docker push ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-frontend:latest
+                                echo "✅ Frontend images pushed"
+                            """
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to GKE - Atlas Only') {
+            steps {
+                script {
+                    echo 'Deploying to GKE with MongoDB Atlas (Minimal Setup)...'
+                    sh '''
+                        export USE_GKE_GCLOUD_AUTH_PLUGIN=True
+
+                        echo "Re-authenticating for cluster access..."
+                        /usr/local/bin/gcloud auth activate-service-account --key-file=${SERVICE_ACCOUNT_KEY}
+                        /usr/local/bin/gcloud config set project ${PROJECT_ID}
+
+                        echo "Getting cluster credentials..."
+                        /usr/local/bin/gcloud container clusters get-credentials ${CLUSTER_NAME} --location=${CLUSTER_LOCATION}
+
+                        echo "Testing cluster connection..."
+                        /usr/local/bin/kubectl cluster-info --request-timeout=10s
+
+                        echo "Deploying Atlas-only configuration (minimal 2-tier)..."
+                        /usr/local/bin/kubectl apply -f k8s/namespace.yaml
+                        /usr/local/bin/kubectl apply -f k8s/atlas-only-config.yaml
+                        /usr/local/bin/kubectl apply -f k8s/atlas-deployments.yaml
+
+                        echo "Waiting for Atlas deployments..."
+                        /usr/local/bin/kubectl wait --for=condition=available deployment/healthcare-backend-atlas -n healthcare-app --timeout=300s
+                        /usr/local/bin/kubectl wait --for=condition=available deployment/healthcare-frontend-atlas -n healthcare-app --timeout=300s
+
+                        echo "✅ Atlas deployment completed!"
+                        /usr/local/bin/kubectl get all -n healthcare-app
+                    '''
+                }
+            }
+        }
+
+        stage('Health Check') {
+            steps {
+                script {
+                    echo 'Performing final health checks...'
+                    sh '''
+                        echo "=== ATLAS DEPLOYMENT STATUS ==="
+                        /usr/local/bin/kubectl get pods -n healthcare-app
+                        /usr/local/bin/kubectl get services -n healthcare-app
+
+                        FRONTEND_IP=$(/usr/local/bin/kubectl get service healthcare-frontend-service-atlas -n healthcare-app -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "PENDING")
+
+                        echo ""
+                        echo "🎉 HEALTHCARE ATLAS DEPLOYMENT SUCCESSFUL!"
+                        echo "==========================================="
+                        if [ "$FRONTEND_IP" != "PENDING" ] && [ "$FRONTEND_IP" != "" ]; then
+                            echo "🌐 Frontend: http://$FRONTEND_IP/"
+                        else
+                            echo "🌐 Frontend: LoadBalancer IP being assigned..."
+                            echo "🔧 Test: kubectl port-forward service/healthcare-frontend-service-atlas 3000:80 -n healthcare-app"
+                        fi
+                        echo "🏥 Backend: Internal service (healthcare-backend-service-atlas:5002)"
+                        echo "💾 Database: MongoDB Atlas (External managed)"
+                        echo "==========================================="
+                        echo "✅ Minimal 2-tier setup - No local DB issues!"
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            echo 'Cleaning up...'
+            sh 'docker system prune -f || true'
+        }
+        success {
+            echo 'Atlas deployment completed successfully!'
+            script {
+                sh '''
+                    echo "=========================================="
+                    echo "🎉 2-TIER ATLAS ARCHITECTURE DEPLOYED"
+                    echo "=========================================="
+                    echo "✅ Backend Tier: Node.js API (healthcare-backend-atlas)"
+                    echo "✅ Frontend Tier: React App (healthcare-frontend-atlas)"
+                    echo "✅ Database Tier: MongoDB Atlas (External)"
+                    echo ""
+                    FRONTEND_IP=$(kubectl get service healthcare-frontend-service-atlas -n healthcare-app -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "PENDING")
+                    if [ "$FRONTEND_IP" != "PENDING" ] && [ "$FRONTEND_IP" != "" ]; then
+                        echo "🌐 Healthcare App: http://$FRONTEND_IP/"
+                    else
+                        echo "🌐 Healthcare App: LoadBalancer IP pending"
+                    fi
+                    echo ""
+                    echo "Minimal architecture with Atlas - No K8s DB issues!"
+                    echo "=========================================="
+                '''
+            }
+        }
+        failure {
+            echo '❌ Atlas deployment failed - check logs above for details'
+        }
+    }
+}

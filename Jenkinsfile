@@ -155,9 +155,9 @@ pipeline {
                                 def frontendImage = "${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-frontend:${BUILD_NUMBER}"
                                 sh """
                                     echo "Building: ${frontendImage}"
-                                    echo "Setting API base URL for Ingress environment..."
+                                    echo "Setting API base URL for K8s service communication..."
                                     docker build \\
-                                        --build-arg REACT_APP_API_BASE_URL="" \\
+                                        --build-arg REACT_APP_API_BASE_URL="http://healthcare-backend-service:5002" \\
                                         -t ${frontendImage} .
                                     docker tag ${frontendImage} ${REGISTRY_HOSTNAME}/${PROJECT_ID}/${REPOSITORY_NAME}/healthcare-frontend:latest
                                     echo "✅ Frontend image built successfully with Kubernetes API URL"
@@ -215,15 +215,21 @@ pipeline {
                         echo "Testing cluster connection..."
                         /usr/local/bin/kubectl cluster-info --request-timeout=10s
                         
-                        echo "Deploying application..."
+                        echo "Deploying application with corrected configurations..."
                         /usr/local/bin/kubectl apply -f k8s/namespace.yaml
                         /usr/local/bin/kubectl apply -f k8s/configmap.yaml
+
+                        echo "Option 1: Deploy with local MongoDB (full 3-tier)"
                         /usr/local/bin/kubectl apply -f k8s/database-deployment.yaml
-                        /usr/local/bin/kubectl apply -f k8s/monitoring-prometheus.yaml
-                        /usr/local/bin/kubectl apply -f k8s/monitoring-grafana.yaml
                         /usr/local/bin/kubectl apply -f k8s/backend-deployment.yaml
                         /usr/local/bin/kubectl apply -f k8s/frontend-deployment.yaml
-                        /usr/local/bin/kubectl apply -f k8s/ingress.yaml
+
+                        echo "Optional: Deploy monitoring stack"
+                        /usr/local/bin/kubectl apply -f k8s/monitoring-prometheus.yaml || echo "Prometheus deployment failed - continuing"
+                        /usr/local/bin/kubectl apply -f k8s/monitoring-grafana.yaml || echo "Grafana deployment failed - continuing"
+
+                        echo "Optional: Deploy ingress if available"
+                        /usr/local/bin/kubectl apply -f k8s/ingress.yaml || echo "Ingress deployment failed - continuing"
                         
                         echo "Waiting for deployments..."
                         /usr/local/bin/kubectl wait --for=condition=available deployment/healthcare-mongodb -n healthcare-app --timeout=300s || echo "MongoDB timeout - continuing"
@@ -260,30 +266,31 @@ pipeline {
                         # Get ingress external IP
                         INGRESS_IP=$(/usr/local/bin/kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
 
-                        # Fallback to NodePort if ingress not ready
-                        if [ -z "$INGRESS_IP" ] || [ "$INGRESS_IP" = "null" ]; then
-                            NODE_IP=$(/usr/local/bin/kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
-                            if [ -z "$NODE_IP" ]; then
-                                NODE_IP=$(/usr/local/bin/kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}')
-                            fi
+                        # Check for LoadBalancer external IP
+                        FRONTEND_EXTERNAL_IP=$(/usr/local/bin/kubectl get service healthcare-frontend-service -n healthcare-app -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "")
+
+                        if [ -z "$FRONTEND_EXTERNAL_IP" ] || [ "$FRONTEND_EXTERNAL_IP" = "null" ]; then
                             echo ""
                             echo "🎉 HEALTHCARE APPLICATION DEPLOYED SUCCESSFULLY!"
                             echo "================================================"
-                            echo "⏳ Ingress LoadBalancer IP is being assigned..."
-                            echo "🌐 Frontend (NodePort): http://$NODE_IP:30080"
-                            echo "📊 Grafana (NodePort): http://$NODE_IP:30081 (admin/grafana123)"
-                            echo "🏥 API Health (NodePort): http://$NODE_IP:30082/health"
+                            echo "⏳ LoadBalancer External IP is being assigned..."
+                            echo "🔧 Use kubectl port-forward for testing:"
+                            echo "   kubectl port-forward service/healthcare-frontend-service 3000:80 -n healthcare-app"
+                            echo "   kubectl port-forward service/healthcare-backend-service 5002:5002 -n healthcare-app"
                             echo "================================================"
-                            echo "Note: Once LoadBalancer IP is ready, access via Ingress for CORS-free experience"
+                            echo "✅ Frontend: LoadBalancer (Port 80)"
+                            echo "✅ Backend: ClusterIP (Port 5002 - Internal)"
+                            echo "✅ Database: ClusterIP (Port 27017 - Internal)"
                         else
                             echo ""
                             echo "🎉 HEALTHCARE APPLICATION DEPLOYED SUCCESSFULLY!"
                             echo "================================================"
-                            echo "🌐 Frontend (Ingress): http://$INGRESS_IP/"
-                            echo "🏥 API Health (Ingress): http://$INGRESS_IP/health"
-                            echo "📊 Grafana (NodePort): http://$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}'):30081 (admin/grafana123)"
+                            echo "🌐 Frontend LoadBalancer: http://$FRONTEND_EXTERNAL_IP/"
+                            echo "🏥 Backend (Internal): healthcare-backend-service:5002"
+                            echo "💾 Database (Internal): healthcare-mongodb-service:27017"
                             echo "================================================"
-                            echo "✅ Using Ingress - No CORS issues!"
+                            echo "✅ 3-Tier Architecture with LoadBalancer Frontend!"
+                            echo "✅ No CORS issues - Internal service communication!"
                         fi
                     '''
                 }
@@ -308,11 +315,15 @@ pipeline {
                     echo "✅ Frontend Tier: React App (healthcare-frontend)"
                     echo "✅ Monitoring: Prometheus + Grafana"
                     echo ""
-                    NODE_IP=$(kubectl get nodes -o jsonpath='{.items[0].status.addresses[?(@.type=="ExternalIP")].address}')
-                    FRONTEND_PORT=$(kubectl get service healthcare-frontend-service -n healthcare-app -o jsonpath='{.spec.ports[0].nodePort}')
-                    GRAFANA_PORT=$(kubectl get service grafana-service -n healthcare-app -o jsonpath='{.spec.ports[0].nodePort}')
-                    echo "🌐 Healthcare App: http://$NODE_IP:$FRONTEND_PORT"
-                    echo "📊 Grafana Dashboard: http://$NODE_IP:$GRAFANA_PORT"
+                    FRONTEND_IP=$(kubectl get service healthcare-frontend-service -n healthcare-app -o jsonpath='{.status.loadBalancer.ingress[0].ip}' 2>/dev/null || echo "PENDING")
+                    BACKEND_CLUSTER_IP=$(kubectl get service healthcare-backend-service -n healthcare-app -o jsonpath='{.spec.clusterIP}' 2>/dev/null || echo "N/A")
+                    if [ "$FRONTEND_IP" != "PENDING" ] && [ "$FRONTEND_IP" != "" ]; then
+                        echo "🌐 Healthcare App: http://$FRONTEND_IP/"
+                    else
+                        echo "🌐 Healthcare App: LoadBalancer IP pending assignment"
+                        echo "🔧 Test locally: kubectl port-forward service/healthcare-frontend-service 3000:80 -n healthcare-app"
+                    fi
+                    echo "🏥 Backend (Internal): $BACKEND_CLUSTER_IP:5002"
                     echo ""
                     echo "Complete 3-tier architecture with monitoring is now live!"
                     echo "=========================================="

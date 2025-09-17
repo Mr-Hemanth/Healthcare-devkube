@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: healthcare-config
+  name: healthcare-config-atlas
   namespace: healthcare-app
   labels:
     app: healthcare
@@ -11,21 +11,18 @@ data:
   BACKEND_PORT: "5002"
   FRONTEND_PORT: "3000"
 
-  # Database Configuration Options:
-  # Option 1: Local MongoDB (3-tier architecture) - Use this for full K8s deployment
-  MONGODB_URI: "mongodb://admin:mongopassword@healthcare-mongodb-service:27017/healthcare?authSource=admin"
-
-  # Option 2: MongoDB Atlas (managed cloud) - Use this to avoid local DB issues
+  # MongoDB Atlas Configuration (minimal setup - no local DB)
+  MONGODB_URI: "mongodb+srv://devops:devops@devops.o4ykiod.mongodb.net/healthcare?retryWrites=true&w=majority&appName=devops"
   MONGODB_ATLAS_URI: "mongodb+srv://devops:devops@devops.o4ykiod.mongodb.net/healthcare?retryWrites=true&w=majority&appName=devops"
 
-  # Database Mode: "local" or "atlas" - Change this to switch database
-  DB_MODE: "local"
+  # Database Mode: atlas only
+  DB_MODE: "atlas"
 
   # API Configuration
   API_BASE_URL: "http://healthcare-backend-service:5002"
 
   # Application Configuration
-  APP_NAME: "Healthcare DevKube"
+  APP_NAME: "Healthcare DevKube - Atlas"
   LOG_LEVEL: "info"
 
   # CORS Configuration
@@ -35,7 +32,7 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: healthcare-secrets
+  name: healthcare-secrets-atlas
   namespace: healthcare-app
   labels:
     app: healthcare
@@ -46,7 +43,5 @@ data:
   # Admin credentials (base64 encoded)
   ADMIN_USERNAME: YWRtaW4=
   ADMIN_PASSWORD: YWRtaW4xMjM=
-  # MongoDB Password (base64 encoded: mongopassword)
-  MONGO_PASSWORD: bW9uZ29wYXNzd29yZA==
-  # Grafana Admin Password (base64 encoded: grafana123)
-  GRAFANA_PASSWORD: Z3JhZmFuYTEyMw==
+  # MongoDB Atlas credentials are already in connection string
+  # Additional secrets can be added here if needed

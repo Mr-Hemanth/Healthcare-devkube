@@ -1,0 +1,152 @@
+# Atlas-Only Deployment - Minimal 2-Tier Setup (Frontend + Backend with Atlas DB)
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthcare-frontend-atlas
+  namespace: healthcare-app
+  labels:
+    app: healthcare-frontend-atlas
+    component: frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: healthcare-frontend-atlas
+  template:
+    metadata:
+      labels:
+        app: healthcare-frontend-atlas
+        component: frontend
+        tier: frontend
+    spec:
+      containers:
+      - name: healthcare-frontend
+        image: asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "3000"
+        - name: REACT_APP_API_BASE_URL
+          value: "http://healthcare-backend-service-atlas:5002"
+        envFrom:
+        - configMapRef:
+            name: healthcare-config-atlas
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: healthcare-frontend-service-atlas
+  namespace: healthcare-app
+  labels:
+    app: healthcare-frontend-atlas
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 3000
+    protocol: TCP
+    name: http
+  selector:
+    app: healthcare-frontend-atlas
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthcare-backend-atlas
+  namespace: healthcare-app
+  labels:
+    app: healthcare-backend-atlas
+    component: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: healthcare-backend-atlas
+  template:
+    metadata:
+      labels:
+        app: healthcare-backend-atlas
+        component: backend
+        tier: backend
+    spec:
+      containers:
+      - name: healthcare-backend
+        image: asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5002
+          protocol: TCP
+        env:
+        - name: NODE_ENV
+          value: "production"
+        - name: PORT
+          value: "5002"
+        envFrom:
+        - configMapRef:
+            name: healthcare-config-atlas
+        - secretRef:
+            name: healthcare-secrets-atlas
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5002
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5002
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: healthcare-backend-service-atlas
+  namespace: healthcare-app
+  labels:
+    app: healthcare-backend-atlas
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5002
+    targetPort: 5002
+    protocol: TCP
+    name: http
+  selector:
+    app: healthcare-backend-atlas
