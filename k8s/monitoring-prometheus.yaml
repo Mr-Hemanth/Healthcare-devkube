@@ -158,8 +158,7 @@ spec:
         configMap:
           name: prometheus-config
       - name: prometheus-data
-        persistentVolumeClaim:
-          claimName: prometheus-data-pvc
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -181,18 +180,6 @@ spec:
     protocol: TCP
   selector:
     app: prometheus
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: prometheus-data-pvc
-  namespace: healthcare-app
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 20Gi
 ---
 apiVersion: v1
 kind: ServiceAccount
