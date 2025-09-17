@@ -927,6 +927,7 @@ Complete 3-tier architecture with monitoring is now live!
 [Pipeline] // script
 [Pipeline] }
 [Pipeline] // stage
+
 [Pipeline] }
 [Pipeline] // withEnv
 [Pipeline] }
