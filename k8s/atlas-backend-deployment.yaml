@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthcare-backend
+  namespace: healthcare-app
+  labels:
+    app: healthcare-backend
+    tier: backend
+    component: api-server
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: healthcare-backend
+  template:
+    metadata:
+      labels:
+        app: healthcare-backend
+        tier: backend
+        component: api-server
+    spec:
+      containers:
+      - name: healthcare-backend
+        image: asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend:latest
+        ports:
+        - containerPort: 5002
+          name: http
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: healthcare-config
+              key: NODE_ENV
+        - name: PORT
+          value: "5002"
+        - name: MONGODB_ATLAS_URI
+          valueFrom:
+            secretKeyRef:
+              name: healthcare-secrets
+              key: MONGODB_ATLAS_URI
+        - name: CORS_ORIGIN
+          valueFrom:
+            configMapKeyRef:
+              name: healthcare-config
+              key: CORS_ORIGIN
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: healthcare-config
+              key: LOG_LEVEL
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: healthcare-secrets
+              key: JWT_SECRET
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5002
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5002
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 5002
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 10
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: healthcare-backend-service
+  namespace: healthcare-app
+  labels:
+    app: healthcare-backend
+    tier: backend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5002
+    targetPort: 5002
+    protocol: TCP
+    name: http
+  selector:
+    app: healthcare-backend
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: healthcare-backend-headless
+  namespace: healthcare-app
+  labels:
+    app: healthcare-backend
+    tier: backend
+spec:
+  type: ClusterIP
+  clusterIP: None
+  ports:
+  - port: 5002
+    targetPort: 5002
+    protocol: TCP
+  selector:
+    app: healthcare-backend

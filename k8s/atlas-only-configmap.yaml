@@ -1,0 +1,59 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: healthcare-config
+  namespace: healthcare-app
+data:
+  # Application Configuration
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+
+  # MongoDB Atlas Configuration (Cloud Database - Tier 3)
+  DATABASE_TYPE: "atlas"
+  MONGODB_ATLAS_URI: "mongodb+srv://devops:devops@devops.o4ykiod.mongodb.net/?retryWrites=true&w=majority&appName=devops"
+
+  # API Configuration for 3-Tier Architecture
+  BACKEND_PORT: "5002"
+  FRONTEND_PORT: "3000"
+
+  # Service Discovery (Internal Kubernetes DNS)
+  BACKEND_SERVICE_URL: "http://healthcare-backend-service:5002"
+  FRONTEND_SERVICE_URL: "http://healthcare-frontend-service:80"
+
+  # CORS Configuration for Multi-Tier Communication
+  CORS_ORIGIN: "*"
+  REACT_APP_API_BASE_URL: ""
+
+  # Health Check Configuration
+  HEALTH_CHECK_INTERVAL: "30"
+  READINESS_TIMEOUT: "60"
+
+  # Resource Management
+  MAX_CONNECTIONS: "100"
+  CONNECTION_TIMEOUT: "10000"
+
+  # Monitoring Configuration
+  METRICS_ENABLED: "true"
+  PROMETHEUS_PORT: "9090"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: healthcare-secrets
+  namespace: healthcare-app
+type: Opaque
+data:
+  # MongoDB Atlas Credentials (Base64 encoded)
+  # mongodb+srv://devops:devops@devops.o4ykiod.mongodb.net/?retryWrites=true&w=majority&appName=devops
+  MONGODB_ATLAS_URI: bW9uZ29kYitzcnY6Ly9kZXZvcHM6ZGV2b3BzQGRldm9wcy5vNHlraW9kLm1vbmdvZGIubmV0Lz9yZXRyeVdyaXRlcz10cnVlJnc9bWFqb3JpdHkmYXBwTmFtZT1kZXZvcHM=
+
+  # Admin Credentials
+  ADMIN_USERNAME: YWRtaW4=  # admin
+  ADMIN_PASSWORD: YWRtaW4xMjM=  # admin123
+
+  # JWT Secret for Authentication
+  JWT_SECRET: aGVhbHRoY2FyZS1qd3Qtc2VjcmV0LWtleS0yMDI1
+
+  # API Keys (if needed)
+  API_SECRET_KEY: aGVhbHRoY2FyZS1hcGktc2VjcmV0

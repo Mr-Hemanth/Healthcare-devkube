@@ -1,0 +1,304 @@
+# Complete 3-Tier Architecture Deployment for MongoDB Atlas
+# Tier 1: Frontend (React) | Tier 2: Backend (Node.js) | Tier 3: Database (MongoDB Atlas)
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: healthcare-app
+  labels:
+    name: healthcare-app
+    purpose: 3-tier-architecture
+
+---
+# Configuration for 3-Tier Atlas Architecture
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: healthcare-atlas-config
+  namespace: healthcare-app
+data:
+  NODE_ENV: "production"
+  LOG_LEVEL: "info"
+  DATABASE_TYPE: "atlas-cloud"
+  BACKEND_PORT: "5002"
+  FRONTEND_PORT: "3000"
+  CORS_ORIGIN: "*"
+  REACT_APP_API_BASE_URL: ""
+  BACKEND_SERVICE_URL: "http://healthcare-backend-service:5002"
+  METRICS_ENABLED: "true"
+  HEALTH_CHECK_INTERVAL: "30"
+
+---
+# Secrets for Atlas Connection
+apiVersion: v1
+kind: Secret
+metadata:
+  name: healthcare-atlas-secrets
+  namespace: healthcare-app
+type: Opaque
+data:
+  MONGODB_ATLAS_URI: bW9uZ29kYitzcnY6Ly9kZXZvcHM6ZGV2b3BzQGRldm9wcy5vNHlraW9kLm1vbmdvZGIubmV0Lz9yZXRyeVdyaXRlcz10cnVlJnc9bWFqb3JpdHkmYXBwTmFtZT1kZXZvcHM=
+  ADMIN_USERNAME: YWRtaW4=
+  ADMIN_PASSWORD: YWRtaW4xMjM=
+  JWT_SECRET: aGVhbHRoY2FyZS1qd3Qtc2VjcmV0LWtleS0yMDI1
+
+---
+# Tier 2: Backend API Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthcare-backend
+  namespace: healthcare-app
+  labels:
+    app: healthcare-backend
+    tier: tier-2-backend
+    architecture: 3-tier
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: healthcare-backend
+  template:
+    metadata:
+      labels:
+        app: healthcare-backend
+        tier: tier-2-backend
+    spec:
+      containers:
+      - name: healthcare-backend
+        image: asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-backend:latest
+        ports:
+        - containerPort: 5002
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: healthcare-atlas-config
+              key: NODE_ENV
+        - name: PORT
+          value: "5002"
+        - name: MONGODB_ATLAS_URI
+          valueFrom:
+            secretKeyRef:
+              name: healthcare-atlas-secrets
+              key: MONGODB_ATLAS_URI
+        - name: CORS_ORIGIN
+          valueFrom:
+            configMapKeyRef:
+              name: healthcare-atlas-config
+              key: CORS_ORIGIN
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: healthcare-atlas-config
+              key: LOG_LEVEL
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5002
+          initialDelaySeconds: 45
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 5002
+          initialDelaySeconds: 15
+          periodSeconds: 10
+
+---
+# Backend Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: healthcare-backend-service
+  namespace: healthcare-app
+  labels:
+    app: healthcare-backend
+    tier: tier-2-backend
+spec:
+  type: ClusterIP
+  ports:
+  - port: 5002
+    targetPort: 5002
+    protocol: TCP
+  selector:
+    app: healthcare-backend
+
+---
+# Tier 1: Frontend Web Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthcare-frontend
+  namespace: healthcare-app
+  labels:
+    app: healthcare-frontend
+    tier: tier-1-frontend
+    architecture: 3-tier
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: healthcare-frontend
+  template:
+    metadata:
+      labels:
+        app: healthcare-frontend
+        tier: tier-1-frontend
+    spec:
+      containers:
+      - name: healthcare-frontend
+        image: asia-south1-docker.pkg.dev/hc-3-monitoring/healthcare-repo/healthcare-frontend:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: healthcare-atlas-config
+              key: NODE_ENV
+        - name: REACT_APP_API_BASE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: healthcare-atlas-config
+              key: REACT_APP_API_BASE_URL
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+
+---
+# Frontend LoadBalancer Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: healthcare-frontend-service
+  namespace: healthcare-app
+  labels:
+    app: healthcare-frontend
+    tier: tier-1-frontend
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 3000
+    protocol: TCP
+  selector:
+    app: healthcare-frontend
+
+---
+# Network Policy for 3-Tier Security
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: healthcare-3tier-network-policy
+  namespace: healthcare-app
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: healthcare-app
+  - from: []
+    ports:
+    - protocol: TCP
+      port: 80
+    - protocol: TCP
+      port: 3000
+    - protocol: TCP
+      port: 5002
+  egress:
+  - {}  # Allow all egress (for MongoDB Atlas connection)
+
+---
+# Resource Quota for 3-Tier App
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: healthcare-3tier-quota
+  namespace: healthcare-app
+spec:
+  hard:
+    requests.cpu: "2"
+    requests.memory: 4Gi
+    limits.cpu: "4"
+    limits.memory: 8Gi
+    persistentvolumeclaims: "0"  # No PVCs needed for Atlas
+    services.loadbalancers: "1"
+    pods: "10"
+
+---
+# Horizontal Pod Autoscaler for Backend
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: healthcare-backend-hpa
+  namespace: healthcare-app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: healthcare-backend
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+---
+# Horizontal Pod Autoscaler for Frontend
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: healthcare-frontend-hpa
+  namespace: healthcare-app
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: healthcare-frontend
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70

@@ -65,8 +65,8 @@ app.use((req, res, next) => {
   next();
 });
 
-// MongoDB connection - Use environment variable with fallback
-const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGODB_ATLAS_URI || 'mongodb+srv://devops:devops@devops.o4ykiod.mongodb.net/?retryWrites=true&w=majority&appName=devops';
+// MongoDB Atlas connection - Use Atlas exclusively for 3-tier architecture
+const MONGODB_URI = process.env.MONGODB_ATLAS_URI || 'mongodb+srv://devops:devops@devops.o4ykiod.mongodb.net/?retryWrites=true&w=majority&appName=devops';
 
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,

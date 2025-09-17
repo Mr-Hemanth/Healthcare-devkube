@@ -1,0 +1,141 @@
+version: '3.8'
+
+# Healthcare 3-Tier Architecture with MongoDB Atlas
+# Tier 1: React Frontend | Tier 2: Node.js Backend | Tier 3: MongoDB Atlas (Cloud)
+
+services:
+  # Tier 2: Application Layer - Node.js Backend API
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: healthcare-backend-atlas
+    restart: always
+    ports:
+      - "5002:5002"
+    environment:
+      NODE_ENV: production
+      PORT: 5002
+      # MongoDB Atlas Connection (Tier 3 - Database Layer)
+      MONGODB_ATLAS_URI: mongodb+srv://devops:devops@devops.o4ykiod.mongodb.net/?retryWrites=true&w=majority&appName=devops
+      CORS_ORIGIN: http://localhost:3000
+      LOG_LEVEL: info
+      DATABASE_TYPE: atlas
+    networks:
+      - healthcare-atlas-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "healthcare.tier=backend"
+      - "healthcare.architecture=3-tier"
+      - "healthcare.database=atlas"
+
+  # Tier 1: Presentation Layer - React Frontend
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        REACT_APP_API_BASE_URL: http://backend:5002
+    container_name: healthcare-frontend-atlas
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      REACT_APP_API_BASE_URL: http://localhost:5002
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - healthcare-atlas-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    labels:
+      - "healthcare.tier=frontend"
+      - "healthcare.architecture=3-tier"
+      - "healthcare.database=atlas"
+
+  # Optional: Monitoring - Prometheus (for metrics)
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: healthcare-prometheus-atlas
+    restart: always
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_atlas_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=7d'
+      - '--web.enable-lifecycle'
+    networks:
+      - healthcare-atlas-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    labels:
+      - "healthcare.component=monitoring"
+      - "healthcare.architecture=3-tier"
+
+  # Optional: Monitoring - Grafana (for dashboards)
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: healthcare-grafana-atlas
+    restart: always
+    ports:
+      - "3001:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: grafana123
+      GF_USERS_ALLOW_SIGN_UP: false
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    volumes:
+      - grafana_atlas_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - healthcare-atlas-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    labels:
+      - "healthcare.component=monitoring"
+      - "healthcare.architecture=3-tier"
+
+# Named volumes for persistent data (minimal since DB is in Atlas)
+volumes:
+  prometheus_atlas_data:
+    driver: local
+    labels:
+      - "healthcare.component=monitoring"
+  grafana_atlas_data:
+    driver: local
+    labels:
+      - "healthcare.component=monitoring"
+
+# Dedicated network for Atlas architecture
+networks:
+  healthcare-atlas-network:
+    driver: bridge
+    name: healthcare-atlas-net
+    ipam:
+      config:
+        - subnet: 172.25.0.0/16
+    labels:
+      - "healthcare.architecture=3-tier-atlas"
+      - "healthcare.database=mongodb-atlas"

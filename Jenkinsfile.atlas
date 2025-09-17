@@ -156,10 +156,10 @@ pipeline {
             }
         }
 
-        stage('Deploy to GKE - Atlas Only') {
+        stage('Deploy 3-Tier Atlas Architecture to GKE') {
             steps {
                 script {
-                    echo 'Deploying to GKE with MongoDB Atlas (Minimal Setup)...'
+                    echo '🚀 Deploying Complete 3-Tier Architecture with Atlas to GKE...'
                     sh '''
                         export USE_GKE_GCLOUD_AUTH_PLUGIN=True
 
@@ -173,16 +173,25 @@ pipeline {
                         echo "Testing cluster connection..."
                         /usr/local/bin/kubectl cluster-info --request-timeout=10s
 
-                        echo "Deploying Atlas-only configuration (minimal 2-tier)..."
-                        /usr/local/bin/kubectl apply -f k8s/namespace.yaml
-                        /usr/local/bin/kubectl apply -f k8s/atlas-only-config.yaml
-                        /usr/local/bin/kubectl apply -f k8s/atlas-deployments.yaml
+                        echo "========================================"
+                        echo "🏗️ DEPLOYING 3-TIER ATLAS ARCHITECTURE"
+                        echo "========================================"
+                        echo "Tier 1: React Frontend (Web Layer)"
+                        echo "Tier 2: Node.js Backend (API Layer)"
+                        echo "Tier 3: MongoDB Atlas (Database Layer)"
+                        echo ""
 
-                        echo "Waiting for Atlas deployments..."
-                        /usr/local/bin/kubectl wait --for=condition=available deployment/healthcare-backend-atlas -n healthcare-app --timeout=300s
-                        /usr/local/bin/kubectl wait --for=condition=available deployment/healthcare-frontend-atlas -n healthcare-app --timeout=300s
+                        echo "Deploying complete 3-tier Atlas configuration..."
+                        /usr/local/bin/kubectl apply -f k8s/atlas-complete-deployment.yaml
 
-                        echo "✅ Atlas deployment completed!"
+                        echo "Waiting for deployments to be ready..."
+                        echo "⏳ Tier 2 (Backend) deployment..."
+                        /usr/local/bin/kubectl wait --for=condition=available deployment/healthcare-backend -n healthcare-app --timeout=300s
+
+                        echo "⏳ Tier 1 (Frontend) deployment..."
+                        /usr/local/bin/kubectl wait --for=condition=available deployment/healthcare-frontend -n healthcare-app --timeout=300s
+
+                        echo "✅ 3-Tier Atlas Architecture deployed successfully!"
                         /usr/local/bin/kubectl get all -n healthcare-app
                     '''
                 }
