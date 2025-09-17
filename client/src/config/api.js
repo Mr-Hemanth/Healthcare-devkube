@@ -31,9 +31,10 @@ const getApiBaseUrl = () => {
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
       return 'http://localhost:8080';
     }
-    // For ingress setup, use relative paths (no base URL)
-    // This allows both /api/* and frontend routes to work through the same domain
-    return '';
+
+    // For Kubernetes deployment, always use ingress IP for proper API routing
+    // This ensures API calls go through the ingress which routes /api/* to backend
+    return 'http://34.93.179.126';
   }
 
   // Development fallback
