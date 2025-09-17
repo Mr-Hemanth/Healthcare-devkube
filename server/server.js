@@ -7,6 +7,37 @@ require('dotenv').config(); // Add this at the top after your requires
 const app = express();
 const PORT = process.env.PORT || 5002; // Use environment variable or fallback
 
+// Enhanced Logging Configuration
+const LOG_LEVEL = process.env.LOG_LEVEL || 'info';
+const DATABASE_TYPE = process.env.DATABASE_TYPE || 'atlas';
+
+// Comprehensive Logger
+const logger = {
+  info: (...args) => {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] [INFO]`, ...args);
+  },
+  warn: (...args) => {
+    const timestamp = new Date().toISOString();
+    console.warn(`[${timestamp}] [WARN]`, ...args);
+  },
+  error: (...args) => {
+    const timestamp = new Date().toISOString();
+    console.error(`[${timestamp}] [ERROR]`, ...args);
+  },
+  debug: (...args) => {
+    if (LOG_LEVEL === 'debug') {
+      const timestamp = new Date().toISOString();
+      console.log(`[${timestamp}] [DEBUG]`, ...args);
+    }
+  }
+};
+
+logger.info('🚀 Starting Healthcare Backend Server...');
+logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
+logger.info(`🗃️ Database Type: ${DATABASE_TYPE}`);
+logger.info(`📝 Log Level: ${LOG_LEVEL}`);
+
 // Middleware
 // Configure CORS to allow requests from frontend services
 const corsOptions = {
@@ -68,12 +99,56 @@ app.use((req, res, next) => {
 // MongoDB Atlas connection - Use Atlas exclusively for 3-tier architecture
 const MONGODB_URI = process.env.MONGODB_ATLAS_URI || 'mongodb+srv://devops:devops@devops.o4ykiod.mongodb.net/?retryWrites=true&w=majority&appName=devops';
 
+logger.info('🔗 Attempting database connection...');
+logger.info(`🌐 Connection String: ${MONGODB_URI.substring(0, 30)}...`);
+logger.debug(`🔍 Full URI: ${MONGODB_URI}`);
+
+// Enhanced MongoDB connection with detailed logging
 mongoose.connect(MONGODB_URI, {
   useNewUrlParser: true,
-  useUnifiedTopology: true
+  useUnifiedTopology: true,
+  serverSelectionTimeoutMS: 30000,
+  heartbeatFrequencyMS: 10000,
+  maxPoolSize: 10,
+  minPoolSize: 2,
+  retryWrites: true,
+  w: 'majority'
 })
-  .then(() => console.log(`MongoDB connected to: ${MONGODB_URI.includes('mongodb+srv') ? 'Atlas Cloud' : 'Local Instance'}`))
-  .catch(err => console.error('MongoDB connection error:', err));
+  .then(() => {
+    const dbType = MONGODB_URI.includes('mongodb+srv') ? 'MongoDB Atlas Cloud' : 'Local MongoDB Instance';
+    logger.info(`✅ Database connected successfully to: ${dbType}`);
+    logger.info(`🔢 Connection readyState: ${mongoose.connection.readyState}`);
+    logger.info(`🗄️ Database Name: ${mongoose.connection.db?.databaseName || 'Not available'}`);
+  })
+  .catch(err => {
+    logger.error('❌ MongoDB connection error:', err.message);
+    logger.error('🔧 Connection details:', {
+      readyState: mongoose.connection.readyState,
+      host: mongoose.connection.host,
+      port: mongoose.connection.port
+    });
+  });
+
+// MongoDB connection event listeners
+mongoose.connection.on('connected', () => {
+  logger.info('🟢 MongoDB connected event triggered');
+});
+
+mongoose.connection.on('error', (err) => {
+  logger.error('🔴 MongoDB connection error event:', err.message);
+});
+
+mongoose.connection.on('disconnected', () => {
+  logger.warn('🟡 MongoDB disconnected event triggered');
+});
+
+// Graceful shutdown
+process.on('SIGINT', async () => {
+  logger.info('🛑 Received SIGINT, closing MongoDB connection...');
+  await mongoose.connection.close();
+  logger.info('✅ MongoDB connection closed');
+  process.exit(0);
+});
 
 // Define schemas
 const userSchema = new mongoose.Schema({
@@ -130,32 +205,42 @@ const Billing = mongoose.model('Billing', billingSchema);
 app.post('/api/signup', async (req, res) => {
   const { username, email, password } = req.body;
 
-  console.log('Incoming signup request:', req.body);
+  logger.info('📝 Incoming signup request:', { username, email, passwordLength: password?.length });
+  logger.debug('🔍 Request body details:', req.body);
 
   if (!username || !email || !password) {
+    logger.warn('❌ Signup validation failed: Missing required fields');
     return res.status(400).json({ message: 'All fields are required' });
   }
 
   try {
+    logger.debug('🔍 Checking for existing email:', email);
     // Check for existing email
     const existingEmailUser = await User.findOne({ email });
     if (existingEmailUser) {
+      logger.warn('❌ Signup failed: Email already exists', email);
       return res.status(400).json({ message: 'Email already in use' });
     }
 
+    logger.debug('🔍 Checking for existing username:', username);
     // Check for existing username
     const existingUsernameUser = await User.findOne({ username });
     if (existingUsernameUser) {
+      logger.warn('❌ Signup failed: Username already taken', username);
       return res.status(400).json({ message: 'Username already taken' });
     }
 
+    logger.debug('🔐 Hashing password...');
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({ username, email, password: hashedPassword });
 
+    logger.debug('💾 Saving user to database...');
     await user.save();
+    logger.info('✅ User registered successfully:', { username, email });
     res.status(201).json({ message: 'User registered successfully!' });
   } catch (error) {
-    console.error('Error during signup:', error);
+    logger.error('❌ Error during signup:', error.message);
+    logger.debug('🔧 Full error details:', error);
     
     // Handle MongoDB duplicate key errors
     if (error.code === 11000) {
@@ -179,26 +264,38 @@ app.post('/api/signup', async (req, res) => {
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
 
+  logger.info('🔐 Incoming login request:', { email, passwordLength: password?.length });
+  logger.debug('🔍 Login attempt details:', { email, hasPassword: !!password });
+
   try {
+    // Check for admin login
     if (email === 'admin' && password === 'admin123') {
+      logger.info('👑 Admin login successful');
       return res.status(200).json({ message: 'Admin login successful', redirectTo: '/admin' });
     }
 
+    logger.debug('🔍 Searching for user in database:', email);
     const user = await User.findOne({ email });
 
     if (!user) {
+      logger.warn('❌ Login failed: User not found', email);
       return res.status(401).json({ message: 'Invalid email or password' });
     }
 
+    logger.debug('🔐 Validating password for user:', email);
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (isPasswordValid) {
+      logger.info('✅ Login successful for user:', email);
       res.status(200).json({ message: 'Login successful' });
     } else {
+      logger.warn('❌ Login failed: Invalid password for user:', email);
       res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
-    res.status(500).json({ message: 'Error logging in', error });
+    logger.error('❌ Error during login:', error.message);
+    logger.debug('🔧 Full login error details:', error);
+    res.status(500).json({ message: 'Error logging in', error: error.message });
   }
 });
 

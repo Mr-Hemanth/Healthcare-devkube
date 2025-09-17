@@ -76,29 +76,70 @@ export const apiClient = axios.create({
   }
 });
 
-// Add request interceptor for debugging
+// Add request interceptor for comprehensive debugging
 apiClient.interceptors.request.use(
   (config) => {
-    console.log(`🌐 API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] 🌐 API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    console.log(`[${timestamp}] 🔧 Base URL: ${config.baseURL}`);
+    console.log(`[${timestamp}] 📊 Headers:`, config.headers);
+
+    if (config.data) {
+      console.log(`[${timestamp}] 📤 Request Data:`, config.data);
+    }
+
     return config;
   },
   (error) => {
-    console.error('❌ API Request Error:', error);
+    const timestamp = new Date().toISOString();
+    console.error(`[${timestamp}] ❌ API Request Error:`, error);
+    console.error(`[${timestamp}] 🔧 Error Details:`, {
+      message: error.message,
+      code: error.code,
+      config: error.config
+    });
     return Promise.reject(error);
   }
 );
 
-// Add response interceptor for debugging
+// Add response interceptor for comprehensive debugging
 apiClient.interceptors.response.use(
   (response) => {
-    console.log(`✅ API Response: ${response.status} ${response.config?.url}`);
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] ✅ API Response: ${response.status} ${response.config?.url}`);
+    console.log(`[${timestamp}] 📥 Response Data:`, response.data);
+    console.log(`[${timestamp}] ⏱️ Response Time: ${Date.now() - (response.config.metadata?.startTime || Date.now())}ms`);
+
     return response;
   },
   (error) => {
-    console.error(`❌ API Response Error: ${error.response?.status} ${error.config?.url}`, error.message);
+    const timestamp = new Date().toISOString();
+    console.error(`[${timestamp}] ❌ API Response Error: ${error.response?.status} ${error.config?.url}`);
+    console.error(`[${timestamp}] 🔧 Error Details:`, {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      url: error.config?.url,
+      method: error.config?.method
+    });
+
+    // Additional network error handling
+    if (error.code === 'NETWORK_ERROR' || !error.response) {
+      console.error(`[${timestamp}] 🌐 Network Error: Unable to reach API server`);
+      console.error(`[${timestamp}] 🔗 Check if backend is running and accessible`);
+      console.error(`[${timestamp}] 🎯 Target URL: ${error.config?.baseURL}${error.config?.url}`);
+    }
+
     return Promise.reject(error);
   }
 );
+
+// Add timing metadata to requests
+apiClient.interceptors.request.use((config) => {
+  config.metadata = { startTime: Date.now() };
+  return config;
+});
 
 export default {
   API_BASE_URL,
