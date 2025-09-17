@@ -11,17 +11,29 @@ const getApiBaseUrl = () => {
   // 3. Relative path (for Kubernetes with ingress/proxy)
   // 4. Development fallback
 
+  const timestamp = new Date().toISOString();
+  console.log(`[${timestamp}] 🔧 API Configuration Debug:`, {
+    NODE_ENV: process.env.NODE_ENV,
+    REACT_APP_API_BASE_URL: process.env.REACT_APP_API_BASE_URL,
+    hostname: window.location.hostname,
+    origin: window.location.origin,
+    windowAPIBaseURL: window.API_BASE_URL
+  });
+
   // Check for build-time environment variable
   if (process.env.REACT_APP_API_BASE_URL) {
     // If empty string, use relative paths (for ingress)
     if (process.env.REACT_APP_API_BASE_URL === '') {
+      console.log(`[${timestamp}] 🔧 Using empty base URL for relative paths (ingress routing)`);
       return '';
     }
+    console.log(`[${timestamp}] 🔧 Using environment variable API base URL:`, process.env.REACT_APP_API_BASE_URL);
     return process.env.REACT_APP_API_BASE_URL;
   }
 
   // Check for runtime configuration
   if (window.API_BASE_URL) {
+    console.log(`[${timestamp}] 🔧 Using window.API_BASE_URL:`, window.API_BASE_URL);
     return window.API_BASE_URL;
   }
 
@@ -29,20 +41,32 @@ const getApiBaseUrl = () => {
   if (process.env.NODE_ENV === 'production') {
     // For local testing with port-forward, use localhost:8080
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+      console.log(`[${timestamp}] 🔧 Using localhost API for port-forward testing`);
       return 'http://localhost:8080';
     }
 
     // For Kubernetes deployment, always use ingress IP for proper API routing
     // This ensures API calls go through the ingress which routes /api/* to backend
+    console.log(`[${timestamp}] 🔧 Using production ingress IP for API routing`);
     return 'http://34.93.179.126';
   }
 
   // Development fallback
+  console.log(`[${timestamp}] 🔧 Using development fallback API base URL`);
   return 'http://localhost:5002';
 };
 
 // Export the base URL
 export const API_BASE_URL = getApiBaseUrl();
+
+// Log final configuration
+const timestamp = new Date().toISOString();
+console.log(`[${timestamp}] 🚀 Final API Configuration:`, {
+  API_BASE_URL,
+  fullLoginURL: `${API_BASE_URL}/api/login`,
+  fullSignupURL: `${API_BASE_URL}/api/signup`,
+  environment: process.env.NODE_ENV
+});
 
 // Export common API endpoints
 export const API_ENDPOINTS = {
