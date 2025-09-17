@@ -173,10 +173,11 @@ metadata:
     prometheus.io/scrape: "true"
     prometheus.io/port: "9090"
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
   - port: 9090
     targetPort: 9090
+    nodePort: 30090
     protocol: TCP
   selector:
     app: prometheus

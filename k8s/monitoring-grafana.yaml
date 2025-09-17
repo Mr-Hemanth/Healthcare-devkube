@@ -10,8 +10,7 @@ data:
   grafana.ini: |
     [server]
     http_port = 3000
-    root_url = %(protocol)s://%(domain)s/grafana
-    serve_from_sub_path = true
+    root_url = %(protocol)s://%(domain)s:%(http_port)s/
 
     [database]
     type = sqlite3
@@ -144,10 +143,6 @@ spec:
           value: "admin123"   # ❌ Remove if using secret
         - name: GF_SERVER_HTTP_PORT
           value: "3000"
-        - name: GF_SERVER_ROOT_URL
-          value: "http://34.100.185.1/grafana"
-        - name: GF_SERVER_SERVE_FROM_SUB_PATH
-          value: "true"
         - name: GF_INSTALL_PLUGINS
           value: "grafana-clock-panel,grafana-simple-json-datasource"
         volumeMounts:
@@ -218,10 +213,11 @@ metadata:
     app: grafana
     component: monitoring
 spec:
-  type: ClusterIP
+  type: NodePort
   ports:
   - port: 3000
     targetPort: 3000
+    nodePort: 30081
     protocol: TCP
   selector:
     app: grafana

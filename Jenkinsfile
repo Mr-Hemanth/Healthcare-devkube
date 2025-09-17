@@ -239,9 +239,6 @@ pipeline {
                         echo "🔧 Deploying ingress configuration..."
                         /usr/local/bin/kubectl apply -f k8s/ingress.yaml
 
-                        echo "🔧 Deploying monitoring ingress configuration..."
-                        /usr/local/bin/kubectl apply -f k8s/monitoring-ingress.yaml
-
                         echo "⏳ Waiting for deployments to be ready..."
                         echo "🔧 Tier 2 (Backend API) deployment..."
                         /usr/local/bin/kubectl wait --for=condition=available deployment/healthcare-backend -n healthcare-app --timeout=600s || echo "⚠️ Backend deployment timeout - checking status..."
