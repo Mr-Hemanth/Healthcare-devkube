@@ -187,6 +187,7 @@ pipeline {
             }
         }
 
+
         stage('Deploy 3-Tier Atlas Architecture to GKE') {
             steps {
                 script {
