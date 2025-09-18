@@ -130,41 +130,34 @@ jobs:
       run: |
         echo "Waiting for Jenkins job to complete..."
 
-        # Wait a moment for job to start
-        sleep 5
+        # Wait for job to start and get actual latest build
+        echo "Waiting for Jenkins job to start..."
+        sleep 10
 
-        # Get job information with better error handling
-        echo "Getting Jenkins job information..."
-        JOB_INFO=$(curl -s -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
-          "http://${{ env.JENKINS_VM_IP }}:${{ env.JENKINS_PORT }}/job/healthcare-testing-only/api/json" || echo "{}")
-
-        echo "Job info response: $JOB_INFO"
-
-        # Use the build number we stored when triggering
-        LATEST_BUILD="${{ env.TRIGGERED_BUILD }}"
-        if [ -z "$LATEST_BUILD" ] || [ "$LATEST_BUILD" = "null" ]; then
-          echo "⚠️ No triggered build number found, trying to detect..."
-          LATEST_BUILD=$(echo "$JOB_INFO" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('lastBuild', {}).get('number', 1) if data.get('lastBuild') else 1)" 2>/dev/null || echo "1")
-        fi
-
-        echo "Monitoring Jenkins build #$LATEST_BUILD (triggered by this workflow)"
-
-        # Check if build exists
-        BUILD_CHECK=$(curl -s -w "%{http_code}" -o /tmp/build_check \
-          -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
-          "http://${{ env.JENKINS_VM_IP }}:${{ env.JENKINS_PORT }}/job/healthcare-testing-only/$LATEST_BUILD/api/json")
-
-        if [ "$BUILD_CHECK" != "200" ]; then
-          echo "❌ Cannot access build #$LATEST_BUILD (HTTP $BUILD_CHECK)"
-          echo "Response:"
-          cat /tmp/build_check 2>/dev/null || echo "No response"
-          echo ""
-          echo "🔍 Available builds:"
-          curl -s -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
+        # Get the actual latest build number after triggering
+        for attempt in {1..6}; do
+          echo "Attempt $attempt: Getting latest build number..."
+          LATEST_BUILD=$(curl -s -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
             "http://${{ env.JENKINS_VM_IP }}:${{ env.JENKINS_PORT }}/job/healthcare-testing-only/api/json" | \
-            python3 -c "import sys, json; data=json.load(sys.stdin); print('Recent builds:', [b.get('number') for b in data.get('builds', [])[:5]])" 2>/dev/null || echo "Could not parse builds"
-          exit 1
-        fi
+            python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('lastBuild', {}).get('number', 1) if data.get('lastBuild') else 1)" 2>/dev/null || echo "1")
+
+          echo "Current latest build: #$LATEST_BUILD"
+
+          # Check if this build exists
+          BUILD_CHECK=$(curl -s -w "%{http_code}" -o /dev/null \
+            -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
+            "http://${{ env.JENKINS_VM_IP }}:${{ env.JENKINS_PORT }}/job/healthcare-testing-only/$LATEST_BUILD/api/json")
+
+          if [ "$BUILD_CHECK" = "200" ]; then
+            echo "✅ Found build #$LATEST_BUILD"
+            break
+          else
+            echo "⚠️ Build #$LATEST_BUILD not accessible (HTTP $BUILD_CHECK), waiting..."
+            sleep 5
+          fi
+        done
+
+        echo "Monitoring Jenkins build #$LATEST_BUILD"
 
         # Wait for build completion (max 15 minutes)
         echo "Monitoring build progress..."
