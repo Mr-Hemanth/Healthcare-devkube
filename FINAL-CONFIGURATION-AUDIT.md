@@ -4,6 +4,7 @@
 
 ### 🌐 **Port Configuration Matrix:**
 
+
 | Service | Docker Port | K8s Container | K8s Service | K8s NodePort | External Access | Status |
 |---------|-------------|---------------|-------------|--------------|-----------------|--------|
 | **Frontend** | 3000 | 3000 | 3000 | 30080 | ✅ Public | 🟢 PERFECT |

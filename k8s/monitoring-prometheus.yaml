@@ -75,17 +75,7 @@ data:
       metrics_path: /metrics
       scrape_interval: 15s
 
-    - job_name: 'healthcare-frontend'
-      static_configs:
-      - targets: ['healthcare-frontend-service:3000']
-      metrics_path: /metrics
-      scrape_interval: 15s
-
-    - job_name: 'mongodb'
-      static_configs:
-      - targets: ['healthcare-mongodb-service:27017']
-      metrics_path: /metrics
-      scrape_interval: 30s
+# Frontend metrics disabled - React apps typically do not expose /metrics    # For frontend monitoring, use browser-based metrics or APM tools    # - job_name: 'healthcare-frontend'    #   static_configs:    #   - targets: ['healthcare-frontend-service:3000']    #   metrics_path: /metrics    #   scrape_interval: 15s    # MongoDB Atlas monitoring - use MongoDB Atlas built-in monitoring    # Atlas provides comprehensive metrics through its own interface    # For external monitoring, use MongoDB Exporter if needed
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -158,8 +148,7 @@ spec:
         configMap:
           name: prometheus-config
       - name: prometheus-data
-        persistentVolumeClaim:
-          claimName: prometheus-data-pvc
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -181,18 +170,6 @@ spec:
     protocol: TCP
   selector:
     app: prometheus
----
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: prometheus-data-pvc
-  namespace: healthcare-app
-spec:
-  accessModes:
-  - ReadWriteOnce
-  resources:
-    requests:
-      storage: 20Gi
 ---
 apiVersion: v1
 kind: ServiceAccount

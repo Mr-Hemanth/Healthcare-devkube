@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
+const promClient = require('prom-client');
 require('dotenv').config(); // Add this at the top after your requires
 
 const app = express();
@@ -38,6 +39,36 @@ logger.info('🚀 Starting Healthcare Backend Server...');
 logger.info(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
 logger.info(`🗃️ Database Type: ${DATABASE_TYPE}`);
 logger.info(`📝 Log Level: ${LOG_LEVEL}`);
+n// Prometheus metrics setup
+const register = promClient.register;
+const collectDefaultMetrics = promClient.collectDefaultMetrics;
+
+// Collect default metrics (CPU, memory, etc.)
+collectDefaultMetrics({ register });
+
+// Custom metrics
+const httpRequestsTotal = new promClient.Counter({
+  name: 'http_requests_total',
+  help: 'Total number of HTTP requests',
+  labelNames: ['method', 'route', 'status']
+});
+
+const httpRequestDuration = new promClient.Histogram({
+  name: 'http_request_duration_seconds',
+  help: 'Duration of HTTP requests in seconds',
+  labelNames: ['method', 'route']
+});
+
+const databaseConnections = new promClient.Gauge({
+  name: 'database_connections_active',
+  help: 'Number of active database connections'
+});
+
+register.registerMetric(httpRequestsTotal);
+register.registerMetric(httpRequestDuration);
+register.registerMetric(databaseConnections);
+
+logger.info('📊 Prometheus metrics initialized');
 
 // Middleware
 // Configure CORS to allow requests from frontend services
@@ -80,22 +111,9 @@ app.get('/health', (req, res) => {
 });
 
 // Metrics endpoint for Prometheus
-app.get('/metrics', (req, res) => {
-  const metrics = {
-    uptime_seconds: process.uptime(),
-    memory_usage: process.memoryUsage(),
-    database_status: mongoose.connection.readyState,
-    requests_total: global.requestCount || 0,
-    timestamp: Date.now()
-  };
-  res.status(200).json(metrics);
-});
+// Metrics endpoint for Prometheusapp.get('/metrics', async (req, res) => {  try {    // Update database connections gauge    databaseConnections.set(mongoose.connection.readyState);        // Return Prometheus formatted metrics    res.set('Content-Type', register.contentType);    res.end(await register.metrics());  } catch (error) {    logger.error('Error generating metrics:', error);    res.status(500).end('Error generating metrics');  }});
 
-// Request counter middleware
-app.use((req, res, next) => {
-  global.requestCount = (global.requestCount || 0) + 1;
-  next();
-});
+// Request tracking middleware for Prometheusapp.use((req, res, next) => {  const start = Date.now();    res.on('finish', () => {    const duration = (Date.now() - start) / 1000;    const route = req.route ? req.route.path : req.path;        httpRequestsTotal.inc({      method: req.method,      route: route,      status: res.statusCode    });        httpRequestDuration.observe({      method: req.method,      route: route    }, duration);  });    next();});
 
 // MongoDB Atlas connection - Use Atlas exclusively for 3-tier architecture
 const MONGODB_URI = process.env.MONGODB_ATLAS_URI || 'mongodb+srv://devops:devops@devops.o4ykiod.mongodb.net/?retryWrites=true&w=majority&appName=devops';
