@@ -92,19 +92,7 @@ jobs:
         echo "Getting current build number..."
         NEXT_BUILD=$(curl -s -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
           "http://${{ env.JENKINS_VM_IP }}:${{ env.JENKINS_PORT }}/job/healthcare-testing-only/api/json" | \
-          python3 -c "
-import sys, json
-try:
-    data = json.load(sys.stdin)
-    if 'nextBuildNumber' in data:
-        print(data['nextBuildNumber'])
-    elif 'lastBuild' in data and data['lastBuild'] and 'number' in data['lastBuild']:
-        print(data['lastBuild']['number'] + 1)
-    else:
-        print('1')
-except:
-    print('1')
-" 2>/dev/null || echo "1")
+          python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('nextBuildNumber', data.get('lastBuild', {}).get('number', 0) + 1 if data.get('lastBuild') else 1))" 2>/dev/null || echo "1")
 
         echo "Next build will be: #$NEXT_BUILD"
         echo "TRIGGERED_BUILD=$NEXT_BUILD" >> $GITHUB_ENV
@@ -156,17 +144,7 @@ except:
         LATEST_BUILD="${{ env.TRIGGERED_BUILD }}"
         if [ -z "$LATEST_BUILD" ] || [ "$LATEST_BUILD" = "null" ]; then
           echo "⚠️ No triggered build number found, trying to detect..."
-          LATEST_BUILD=$(echo "$JOB_INFO" | python3 -c "
-import sys, json
-try:
-    data = json.load(sys.stdin)
-    if 'lastBuild' in data and data['lastBuild'] and 'number' in data['lastBuild']:
-        print(data['lastBuild']['number'])
-    else:
-        print('1')
-except:
-    print('1')
-" 2>/dev/null || echo "1")
+          LATEST_BUILD=$(echo "$JOB_INFO" | python3 -c "import sys, json; data=json.load(sys.stdin); print(data.get('lastBuild', {}).get('number', 1) if data.get('lastBuild') else 1)" 2>/dev/null || echo "1")
         fi
 
         echo "Monitoring Jenkins build #$LATEST_BUILD (triggered by this workflow)"
@@ -184,15 +162,7 @@ except:
           echo "🔍 Available builds:"
           curl -s -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
             "http://${{ env.JENKINS_VM_IP }}:${{ env.JENKINS_PORT }}/job/healthcare-testing-only/api/json" | \
-            python3 -c "
-import sys, json
-try:
-    data = json.load(sys.stdin)
-    builds = data.get('builds', [])
-    print('Recent builds:', [b.get('number') for b in builds[:5]])
-except:
-    print('Could not parse builds')
-"
+            python3 -c "import sys, json; data=json.load(sys.stdin); print('Recent builds:', [b.get('number') for b in data.get('builds', [])[:5]])" 2>/dev/null || echo "Could not parse builds"
           exit 1
         fi
 
@@ -202,34 +172,14 @@ except:
           BUILD_DATA=$(curl -s -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
             "http://${{ env.JENKINS_VM_IP }}:${{ env.JENKINS_PORT }}/job/healthcare-testing-only/$LATEST_BUILD/api/json" 2>/dev/null || echo "{}")
 
-          BUILD_STATUS=$(echo "$BUILD_DATA" | python3 -c "
-import sys, json
-try:
-    data = json.load(sys.stdin)
-    if data.get('building', False):
-        print('BUILDING')
-    elif 'result' in data and data['result']:
-        print(data['result'])
-    else:
-        print('UNKNOWN')
-except:
-    print('UNKNOWN')
-" 2>/dev/null || echo "UNKNOWN")
+          BUILD_STATUS=$(echo "$BUILD_DATA" | python3 -c "import sys, json; data=json.load(sys.stdin); print('BUILDING' if data.get('building', False) else data.get('result', 'UNKNOWN'))" 2>/dev/null || echo "UNKNOWN")
 
           echo "Build #$LATEST_BUILD status: $BUILD_STATUS (check $i/90)"
 
           if [ "$BUILD_STATUS" = "SUCCESS" ]; then
             echo "✅ Jenkins job completed successfully!"
             echo "📋 Build summary:"
-            echo "$BUILD_DATA" | python3 -c "
-import sys, json
-try:
-    data = json.load(sys.stdin)
-    print(f\"Duration: {data.get('duration', 0)/1000:.1f} seconds\")
-    print(f\"Result: {data.get('result', 'Unknown')}\")
-except:
-    print('Could not parse build data')
-"
+            echo "$BUILD_DATA" | python3 -c "import sys, json; data=json.load(sys.stdin); print('Duration: {:.1f} seconds'.format(data.get('duration', 0)/1000)); print('Result:', data.get('result', 'Unknown'))" 2>/dev/null || echo "Could not parse build data"
             break
           elif [ "$BUILD_STATUS" = "FAILURE" ] || [ "$BUILD_STATUS" = "ABORTED" ]; then
             echo "❌ Jenkins job failed with status: $BUILD_STATUS"
