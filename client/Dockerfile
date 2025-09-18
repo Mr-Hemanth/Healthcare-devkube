@@ -10,6 +10,7 @@ COPY package*.json ./
 # Install dependencies (including dev dependencies for build)
 RUN npm ci && npm cache clean --force
 
+
 # Copy the rest of your application code to the container
 COPY . .
 
