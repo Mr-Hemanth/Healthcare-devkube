@@ -19,6 +19,7 @@ This guide provides comprehensive instructions for deploying the Healthcare 3-Ti
 
 ## ☁️ GCP Infrastructure
 
+
 ### **Project Configuration**
 - **Project ID**: `hc-3-monitoring`
 - **Region**: `asia-south1` (Mumbai, India)
