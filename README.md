@@ -1,315 +1,189 @@
-# Healthcare DevKube CI/CD Pipeline
+# 🏥 Healthcare DevKube - 3-Tier Atlas Application
 
-Complete CI/CD implementation for Healthcare application using Google Cloud Platform, Jenkins, and Kubernetes.
+## 📋 Overview
 
-## 🎯 Project Overview
+Complete CI/CD implementation for Healthcare application using Google Cloud Platform with Jenkins and GitHub Actions pipelines, featuring MongoDB Atlas integration.
 
-**Healthcare DevKube** is a full-stack healthcare management application with automated CI/CD pipeline that demonstrates modern DevOps practices on Google Cloud Platform.
-
-### Architecture
-```
-GitHub → Jenkins → Docker Build → Artifact Registry → GKE Autopilot → Production
-```
-
-### Tech Stack
-- **Frontend**: React.js (Port 3000)
-- **Backend**: Node.js/Express (Port 5002)
-- **Database**: MongoDB Atlas
-- **CI/CD**: Jenkins on GCP Compute Engine
-- **Orchestration**: Google Kubernetes Engine (GKE) Autopilot
-- **Registry**: GCP Artifact Registry
-- **Region**: asia-south1 (Mumbai, India)
-
-## 🚀 Quick Start
-
-### Prerequisites
-- GCP account with billing enabled
-- GitHub repository (public recommended)
-- Basic knowledge of Docker, Kubernetes, and Jenkins
-
-### Infrastructure Components
-- **Jenkins Server**: `34.93.51.43:8080` (e2-standard-2)
-- **GKE Cluster**: `healthcare-cluster` (Autopilot)
-- **Artifact Registry**: `healthcare-repo` (Docker)
-- **Namespace**: `healthcare-app`
-
-## 📁 Project Structure
+## 🏗️ Architecture
 
 ```
-Healthcare-devkube/
-├── client/                 # React frontend
-│   ├── Dockerfile
-│   └── package.json
-├── server/                 # Node.js backend
-│   ├── Dockerfile
-│   ├── server.js
-│   └── package.json
-├── k8s/                    # Kubernetes manifests
-│   ├── namespace.yaml
-│   ├── configmap.yaml
-│   ├── backend-deployment.yaml
-│   ├── frontend-deployment.yaml
-│   └── deploy.sh
-├── Jenkinsfile            # CI/CD pipeline
-├── guidelines.md          # Implementation guide
-├── JENKINS_SETUP.md       # Jenkins configuration
-├── TESTING_WORKFLOW.md    # Testing procedures
-└── MONITORING_SETUP.md    # Monitoring guide
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│  Frontend Tier  │────│  Backend Tier   │────│  Database Tier  │
+│   React App     │    │   Node.js API   │    │ MongoDB Atlas   │
+│   (Port 3000)   │    │   (Port 5002)   │    │    (Cloud)      │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+         │                       │                       │
+    LoadBalancer            ClusterIP               External Cloud
+    (External IP)          (Internal)               (Atlas URI)
 ```
 
-## ⚡ Getting Started
+## ☁️ Infrastructure
 
-### 1. Application Access
+- **Project**: `hc-3-monitoring`
+- **Region**: `asia-south1` (Mumbai, India)
+- **Cluster**: `healthcare3-cluster` (GKE Autopilot)
+- **Registry**: `asia-south1-docker.pkg.dev`
+- **Database**: MongoDB Atlas (Cloud)
+
+## 🚀 Access Points
+
+### **Application**
+- **Frontend**: External LoadBalancer IP (assigned during deployment)
+- **Backend**: `healthcare-backend-service:5002` (Internal)
+- **Database**: MongoDB Atlas (External cloud service)
+
+### **Monitoring**
+- **Grafana**: `http://34.100.250.12:30081/login` (admin/admin123)
+- **Prometheus**: `http://34.100.250.12:30080`
+
+## 📖 Documentation
+
+### **🔧 Pipeline Guides**
+
+1. **[GCP Deployment Guide](GCP-DEPLOYMENT-GUIDE.md)**
+   - GCP infrastructure overview
+   - Network configuration and access points
+   - Kubernetes cluster setup
+   - Cost optimization tips
+
+2. **[Jenkins Pipeline Guide](JENKINS-PIPELINE-GUIDE.md)**
+   - Complete Jenkins CI/CD setup
+   - Stage-by-stage pipeline breakdown
+   - Build logs analysis
+   - Troubleshooting guide
+
+3. **[GitHub Actions Pipeline Guide](GITHUB-ACTIONS-PIPELINE-GUIDE.md)**
+   - GitHub Actions workflow configuration
+   - Atlas-specific deployment steps
+   - Matrix strategy implementation
+   - Automated monitoring setup
+
+## ⚡ Quick Start
+
+### **GitHub Actions Deployment**
 ```bash
-# Get application URL
-kubectl get service healthcare-frontend-service -n healthcare-app
-kubectl get nodes -o wide
-
-# Access application
-Frontend: http://NODE_IP:30080
-Backend API: http://NODE_IP:30080/api/
-```
-
-### 2. Local Development
-```bash
-# Clone repository
-git clone https://github.com/YOUR_USERNAME/Healthcare-devkube.git
-cd Healthcare-devkube
-
-# Start backend
-cd server
-npm install
-node server.js
-
-# Start frontend (new terminal)
-cd client
-npm install
-npm start
-```
-
-### 3. Deploy Changes
-```bash
-# Make code changes
 git add .
-git commit -m "Your changes"
+git commit -m "Deploy to production"
 git push origin main
-
-# Jenkins will automatically:
-# 1. Run tests
-# 2. Build Docker images
-# 3. Push to Artifact Registry
-# 4. Deploy to Kubernetes
-# 5. Perform health checks
 ```
 
-## 🔧 Pipeline Stages
+### **Jenkins Deployment**
+1. Access Jenkins dashboard
+2. Select "Healthcare Atlas Pipeline"
+3. Click "Build Now"
 
-The Jenkins pipeline includes:
-
-1. **Checkout** - Clone latest code
-2. **Setup GCP Auth** - Authenticate with service account
-3. **Test Backend** - Node.js syntax validation
-4. **Test Frontend** - React test suite
-5. **Build Images** - Docker build (parallel)
-6. **Push to Registry** - Artifact Registry upload
-7. **Deploy to GKE** - Kubernetes deployment
-8. **Health Check** - Verify application health
-
-## 📊 Monitoring & Health
-
-### Application Health
-- **Frontend Health**: `http://NODE_IP:30080/`
-- **Backend Health**: `http://NODE_IP:30080/api/`
-- **Kubernetes Dashboard**: Available via `kubectl proxy`
-
-### Key Metrics
-- **Build Time**: ~8-12 minutes
-- **Deployment Time**: ~3-5 minutes
-- **Replica Count**: 2 pods per service
-- **Resource Limits**: 512Mi memory, 500m CPU per pod
-
-### Monitoring Commands
+### **Manual Local Testing**
 ```bash
-# Check application status
+# Port-forward to test locally
+kubectl port-forward service/healthcare-frontend-service 3000:80 -n healthcare-app
+# Access: http://localhost:3000
+
+kubectl port-forward service/grafana-service 3001:3000 -n healthcare-app
+# Access: http://localhost:3001 (admin/admin123)
+```
+
+## 🔍 Verification Commands
+
+```bash
+# Check deployment status
 kubectl get all -n healthcare-app
+
+# Get external access
+kubectl get service healthcare-frontend-service -n healthcare-app
 
 # View logs
 kubectl logs -f deployment/healthcare-backend -n healthcare-app
 kubectl logs -f deployment/healthcare-frontend -n healthcare-app
 
-# Resource usage
-kubectl top pods -n healthcare-app
-kubectl top nodes
+# Test health endpoints
+curl http://EXTERNAL_IP/
+curl http://BACKEND_CLUSTER_IP:5002/health
 ```
 
-## 🛠️ Configuration
+## 📊 Pipeline Features
 
-### Environment Variables (ConfigMap)
-- `NODE_ENV`: production
-- `MONGODB_URI`: MongoDB Atlas connection
-- `API_BASE_URL`: Backend service URL
-- `LOG_LEVEL`: info
+### **✅ GitHub Actions**
+- Atlas-only deployment (no local MongoDB)
+- Parallel testing and building
+- Comprehensive health checks
+- Automatic monitoring setup
+- Timeout handling for deployments
 
-### Secrets
-- JWT tokens
-- Admin credentials
-- Database passwords
+### **✅ Jenkins**
+- Traditional CI/CD pipeline
+- Local MongoDB + Atlas options
+- Detailed build logs
+- Resource verification
+- Production-ready deployment
 
-### Resource Limits
-- **Memory**: 256Mi request, 512Mi limit
-- **CPU**: 250m request, 500m limit
-- **Replicas**: 2 per deployment
-
-## 🎛️ Operations
-
-### Manual Deployment
-```bash
-cd k8s/
-./deploy.sh
-```
-
-### Scale Application
-```bash
-# Scale backend
-kubectl scale deployment healthcare-backend --replicas=3 -n healthcare-app
-
-# Scale frontend
-kubectl scale deployment healthcare-frontend --replicas=3 -n healthcare-app
-```
-
-### Rollback Deployment
-```bash
-# View rollout history
-kubectl rollout history deployment/healthcare-backend -n healthcare-app
-
-# Rollback to previous version
-kubectl rollout undo deployment/healthcare-backend -n healthcare-app
-```
-
-### Update Configuration
-```bash
-# Edit ConfigMap
-kubectl edit configmap healthcare-config -n healthcare-app
-
-# Restart deployments to pick up changes
-kubectl rollout restart deployment/healthcare-backend -n healthcare-app
-kubectl rollout restart deployment/healthcare-frontend -n healthcare-app
-```
-
-## 🔐 Security Features
-
-- **Service Account**: Dedicated Jenkins SA with minimal permissions
-- **Network Policies**: Isolated namespace
-- **Resource Quotas**: Prevent resource abuse
-- **Secret Management**: Encrypted secrets in Kubernetes
-- **Image Security**: Private Artifact Registry
-- **RBAC**: Role-based access control
-
-## 💰 Cost Optimization
-
-### Monthly Estimates (GCP South India)
-- **GKE Autopilot**: ₹5,000-7,000
-- **Compute Engine (Jenkins)**: ₹3,000-4,000
-- **Artifact Registry**: ₹500-1,000
-- **Network & Storage**: ₹1,000-1,500
-- **Total**: ₹9,500-13,500 (~$115-165 USD)
-
-### Cost Optimization Tips
-- Use GCP free credits ($300)
-- Enable autoscaling
-- Clean up old Docker images
-- Monitor resource usage
-- Use preemptible nodes for development
+### **✅ Monitoring Stack**
+- **Prometheus**: Metrics collection
+- **Grafana**: Visualization dashboards
+- **Health Checks**: Automated verification
+- **NodePort Access**: External monitoring
 
 ## 🚨 Troubleshooting
 
-### Common Issues
+### **Common Issues**
+1. **Backend Deployment Timeout**: Check pod status and logs
+2. **LoadBalancer IP Pending**: Wait for GCP IP assignment
+3. **Monitoring Access**: Use port-forwarding for local access
+4. **Atlas Connection**: Verify connection string in ConfigMap
 
-**Build Failures**
+### **Emergency Commands**
 ```bash
-# Check Jenkins logs
-sudo journalctl -u jenkins -f
+# Restart deployments
+kubectl rollout restart deployment/healthcare-backend -n healthcare-app
+kubectl rollout restart deployment/healthcare-frontend -n healthcare-app
 
-# Clear Docker cache
-docker system prune -f
+# Scale applications
+kubectl scale deployment healthcare-frontend --replicas=3 -n healthcare-app
+kubectl scale deployment healthcare-backend --replicas=3 -n healthcare-app
+
+# View detailed status
+kubectl describe deployment healthcare-backend -n healthcare-app
+kubectl get pods -n healthcare-app -o wide
 ```
 
-**Pod Failures**
-```bash
-# Check pod logs
-kubectl describe pod POD_NAME -n healthcare-app
-kubectl logs POD_NAME -n healthcare-app
-```
+## 💰 Cost Estimation
 
-**Connectivity Issues**
-```bash
-# Check services
-kubectl get svc -n healthcare-app
+**Monthly GCP Costs (Asia-South1):**
+- GKE Autopilot: ₹5,000-7,000
+- Artifact Registry: ₹500-1,000
+- Load Balancer: ₹1,500-2,000
+- Network Egress: ₹1,000-1,500
+- **Total**: ₹8,000-11,500 (~$95-140 USD)
 
-# Test internal connectivity
-kubectl exec -it deployment/healthcare-backend -n healthcare-app -- curl localhost:5002
-```
+## 🛠️ Tech Stack
 
-**Database Connection**
-```bash
-# Check backend logs for MongoDB errors
-kubectl logs deployment/healthcare-backend -n healthcare-app | grep -i mongodb
-```
+- **Frontend**: React.js with Docker
+- **Backend**: Node.js/Express with Docker
+- **Database**: MongoDB Atlas (Cloud)
+- **CI/CD**: Jenkins & GitHub Actions
+- **Orchestration**: Google Kubernetes Engine (GKE) Autopilot
+- **Registry**: GCP Artifact Registry
+- **Monitoring**: Prometheus + Grafana
+- **Infrastructure**: Google Cloud Platform
 
-## 📚 Documentation
-
-Detailed guides available:
-
-- **[Implementation Guidelines](guidelines.md)** - Complete setup steps
-- **[Jenkins Setup](JENKINS_SETUP.md)** - Jenkins configuration
-- **[Testing Workflow](TESTING_WORKFLOW.md)** - End-to-end testing
-- **[Monitoring Setup](MONITORING_SETUP.md)** - Monitoring & alerting
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit changes (`git commit -m 'Add amazing feature'`)
-4. Push to branch (`git push origin feature/amazing-feature`)
-5. Open Pull Request
+---
 
 ## 📞 Support
 
-### Useful Commands
-```bash
-# Get cluster credentials
-gcloud container clusters get-credentials healthcare-cluster --zone=asia-south1
+### **Pipeline Documentation**
+- **GCP Infrastructure**: [GCP-DEPLOYMENT-GUIDE.md](GCP-DEPLOYMENT-GUIDE.md)
+- **Jenkins CI/CD**: [JENKINS-PIPELINE-GUIDE.md](JENKINS-PIPELINE-GUIDE.md)
+- **GitHub Actions**: [GITHUB-ACTIONS-PIPELINE-GUIDE.md](GITHUB-ACTIONS-PIPELINE-GUIDE.md)
 
-# Access Jenkins
-ssh jenkins-server
-# or visit: http://34.93.51.43:8080
-
-# Quick health check
-curl http://NODE_IP:30080/api/
-```
-
-### Emergency Contacts
+### **Quick Links**
+- **Repository**: https://github.com/Mr-Hemanth/Healthcare-devkube
 - **GCP Console**: https://console.cloud.google.com
-- **Jenkins Dashboard**: http://34.93.51.43:8080
-- **GitHub Repository**: https://github.com/YOUR_USERNAME/Healthcare-devkube
-
-## 📄 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🏆 Achievements
-
-✅ **Infrastructure as Code**: Complete Kubernetes manifests
-✅ **Automated CI/CD**: Zero-touch deployments
-✅ **Production Ready**: Health checks, monitoring, logging
-✅ **Scalable Architecture**: Auto-scaling capable
-✅ **Cost Optimized**: Efficient resource utilization
-✅ **Security First**: RBAC, secrets management, private registry
+- **Monitoring**: http://34.100.250.12:30081/login
 
 ---
 
 **Status**: Production Ready ✅
-**Last Updated**: January 2025
-**Maintained By**: DevOps Team
+**Architecture**: 3-Tier with Atlas Database
+**Deployment**: Multi-Pipeline Support (Jenkins + GitHub Actions)
+**Monitoring**: Prometheus + Grafana Stack
 
-*"Continuous Integration, Continuous Deployment, Continuous Improvement"*
+*"Automated deployment, Atlas-powered data, Production-ready monitoring"*
