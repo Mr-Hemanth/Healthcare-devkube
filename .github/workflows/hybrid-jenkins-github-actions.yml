@@ -2,7 +2,7 @@ name: 🔗 Hybrid Jenkins-GitHub Actions Pipeline
 
 on:
   push:
-    branches: [ main, master, develop, hybrid-pipeline ]
+    branches: [ main, master, develop,github-actions ]
   pull_request:
     branches: [ main, master ]
   workflow_dispatch:
