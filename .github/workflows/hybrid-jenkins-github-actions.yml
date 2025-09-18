@@ -98,12 +98,12 @@ jobs:
           JENKINS_RESPONSE=$(curl -s -w "%{http_code}" -o /tmp/jenkins_response \
             -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
             -H "Jenkins-Crumb: $CRUMB" \
-            -X POST "http://${{ env.JENKINS_VM_IP }}:${{ env.JENKINS_PORT }}/job/healthcare-devkube-pipeline/build")
+            -X POST "http://${{ env.JENKINS_VM_IP }}:${{ env.JENKINS_PORT }}/job/healthcare-testing-only/build")
         else
           # Fallback without crumb
           JENKINS_RESPONSE=$(curl -s -w "%{http_code}" -o /tmp/jenkins_response \
             -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
-            -X POST "http://${{ env.JENKINS_VM_IP }}:${{ env.JENKINS_PORT }}/job/healthcare-devkube-pipeline/build")
+            -X POST "http://${{ env.JENKINS_VM_IP }}:${{ env.JENKINS_PORT }}/job/healthcare-testing-only/build")
         fi
 
         echo "Jenkins API Response Code: $JENKINS_RESPONSE"
@@ -122,7 +122,7 @@ jobs:
 
         # Get the latest build number
         LATEST_BUILD=$(curl -s -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
-          "http://${{ env.JENKINS_VM_IP }}:${{ env.JENKINS_PORT }}/job/healthcare-devkube-pipeline/api/json" | \
+          "http://${{ env.JENKINS_VM_IP }}:${{ env.JENKINS_PORT }}/job/healthcare-testing-only/api/json" | \
           python3 -c "import sys, json; print(json.load(sys.stdin)['lastBuild']['number'])" 2>/dev/null || echo "unknown")
 
         echo "Monitoring Jenkins build #$LATEST_BUILD"
@@ -130,7 +130,7 @@ jobs:
         # Wait for build completion (max 20 minutes)
         for i in {1..120}; do
           BUILD_STATUS=$(curl -s -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
-            "http://${{ env.JENKINS_VM_IP }}:${{ env.JENKINS_PORT }}/job/healthcare-devkube-pipeline/$LATEST_BUILD/api/json" | \
+            "http://${{ env.JENKINS_VM_IP }}:${{ env.JENKINS_PORT }}/job/healthcare-testing-only/$LATEST_BUILD/api/json" | \
             python3 -c "import sys, json; data=json.load(sys.stdin); print('BUILDING' if data['building'] else data['result'])" 2>/dev/null || echo "UNKNOWN")
 
           echo "Build #$LATEST_BUILD status: $BUILD_STATUS"
@@ -144,7 +144,7 @@ jobs:
             # Get build console output for debugging
             echo "📋 Last 50 lines of Jenkins console output:"
             curl -s -u "${{ secrets.JENKINS_USER }}:${{ secrets.JENKINS_API_TOKEN }}" \
-              "http://${{ env.JENKINS_VM_IP }}:${{ env.JENKINS_PORT }}/job/healthcare-devkube-pipeline/$LATEST_BUILD/consoleText" | \
+              "http://${{ env.JENKINS_VM_IP }}:${{ env.JENKINS_PORT }}/job/healthcare-testing-only/$LATEST_BUILD/consoleText" | \
               tail -50
 
             exit 1
@@ -298,7 +298,7 @@ jobs:
         echo "========================================"
         echo "🏗️ DEPLOYING 3-TIER ATLAS ARCHITECTURE"
         echo "========================================"
-        echo "🧪 Tested by: Jenkins VM (healthcare-devkube-pipeline)"
+        echo "🧪 Tested by: Jenkins VM (healthcare-testing-only)"
         echo "🚀 Deployed by: GitHub Actions (Cloud Native)"
         echo "Tier 1: React Frontend (Web Layer)"
         echo "Tier 2: Node.js Backend (API Layer)"
